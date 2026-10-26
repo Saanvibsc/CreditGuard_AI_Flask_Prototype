@@ -1,0 +1,7 @@
+{
+  "name": "CreditGuard AI",
+  "description": "Credit card risk intelligence and portfolio default prediction dashboard.",
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
