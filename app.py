@@ -587,8 +587,12 @@ if Flask is not None:
 
     @app.route("/api/v1/customers/<customer_id>", methods=["GET"])
     def get_customer(customer_id):
+        clean = customer_id.strip().upper()
+        digits = "".join(filter(str.isdigit, clean))
         for c in engine.customers:
-            if c["id"].upper() == customer_id.upper():
+            c_id = c.get("id", "").upper()
+            c_digits = "".join(filter(str.isdigit, c_id))
+            if c_id == clean or (digits and c_digits and int(digits) == int(c_digits)):
                 return jsonify(c)
         return jsonify({"error": f"Customer {customer_id} not found"}), 404
 
@@ -639,10 +643,78 @@ if Flask is not None:
 
     @app.route("/api/v1/segmentation/clusters", methods=["GET"])
     def segmentation_clusters():
+        segment_defs = [
+            {
+                "name": "Prime Transactors",
+                "tagline": "High liquidity, pristine payment history, low revolving utilization",
+                "description": "Cardholders who consistently pay off balances, maintain low credit utilization (<25%), and exhibit zero payment delays.",
+                "recommendedStrategy": "Proactively increase credit limits and offer premium rewards/cards.",
+                "riskTier": "Low"
+            },
+            {
+                "name": "Revolving Balances",
+                "tagline": "Moderate utilization, steady payment behaviour, key interest generator",
+                "description": "Core revolving customers who carry monthly balances but make regular on-time payments with healthy debt service.",
+                "recommendedStrategy": "Maintain regular quarterly line reviews; offer balance consolidation programs.",
+                "riskTier": "Low"
+            },
+            {
+                "name": "Elevated Leverage",
+                "tagline": "High credit line utilization, elevated debt-to-income sensitivity",
+                "description": "Cardholders with utilization above 60% and higher leverage, sensitive to interest rate hikes and cash flow shocks.",
+                "recommendedStrategy": "Cap ATM cash advance facilities and require 3.5% minimum monthly payment ratio.",
+                "riskTier": "Medium"
+            },
+            {
+                "name": "Delinquency Watchlist",
+                "tagline": "Chronic payment delays (6M), high utilization, acute default hazard",
+                "description": "Accounts with multiple missed billing cycles or severe line strain. Primary source of potential default losses.",
+                "recommendedStrategy": "Immediate credit line curtailment of 20% and proactive workout desk contact.",
+                "riskTier": "High"
+            },
+            {
+                "name": "Emerging Young Borrowers",
+                "tagline": "Shorter credit tenure, lower average limit, active credit building",
+                "description": "Younger applicants or accounts with under 3 years credit history building payment reputation.",
+                "recommendedStrategy": "Graduated credit line growth tied to consecutive on-time payment milestones.",
+                "riskTier": "Medium"
+            }
+        ]
+
+        total_cust = len(engine.customers) or 1
+        segments = []
+        for c_id, sdef in enumerate(segment_defs):
+            cohort = [c for c in engine.customers if c.get("segment") == sdef["name"]]
+            cnt = len(cohort)
+            avg_util = round(sum(c.get("creditUtilization", 0) for c in cohort) / cnt, 1) if cnt > 0 else 0.0
+            avg_bal = round(sum(c.get("outstandingBalance", 0) for c in cohort) / cnt, 2) if cnt > 0 else 0.0
+            avg_inc = round(sum(c.get("annualIncome", 0) for c in cohort) / cnt, 2) if cnt > 0 else 0.0
+            def_cnt = sum(1 for c in cohort if c.get("actualDefault") == 1 or c.get("delayedPayments6M", 0) >= 3)
+            def_rate = round((def_cnt / cnt) * 100.0, 1) if cnt > 0 else 0.0
+            late_6m = round(sum(c.get("delayedPayments6M", 0) for c in cohort) / cnt, 2) if cnt > 0 else 0.0
+
+            segments.append({
+                "cluster_id": c_id,
+                "name": sdef["name"],
+                "segment": sdef["name"],
+                "tagline": sdef["tagline"],
+                "description": sdef["description"],
+                "recommendedStrategy": sdef["recommendedStrategy"],
+                "riskTier": sdef["riskTier"],
+                "count": cnt,
+                "portfolioPercentage": round((cnt / total_cust) * 100.0, 1),
+                "defaultRatePct": def_rate,
+                "averageUtilizationPct": avg_util,
+                "averageBalance": avg_bal,
+                "averageIncome": avg_inc,
+                "averageLatePayments6M": late_6m
+            })
+
+        assignments = {c["id"]: c.get("clusterId", 0) for c in engine.customers}
         return jsonify({
-            "segments": engine.kmeans_clusters,
-            "customerAssignments": engine.customer_cluster_assignments,
-            "totalCustomers": len(engine.customers)
+            "segments": segments,
+            "customerAssignments": assignments,
+            "totalCustomers": total_cust
         })
 
     @app.route("/api/v1/model/spec", methods=["GET"])

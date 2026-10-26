@@ -12,7 +12,8 @@ import {
   Activity, 
   ChevronRight,
   BookOpen,
-  Info
+  Info,
+  Search
 } from 'lucide-react';
 import { Customer, RiskConfig, NavPage } from '../types';
 import { calculateRiskAssessment, getCalibratedScore10, getCalibratedCategory } from '../utils/scoringEngine';
@@ -32,14 +33,24 @@ export const ExplanationGuide: React.FC<ExplanationGuideProps> = ({
 }) => {
   const [selectedId, setSelectedId] = useState<string>(customers[0]?.id || 'CUST000001');
   const [activeStep, setActiveStep] = useState<number>(1);
+  const [guideSearchQuery, setGuideSearchQuery] = useState<string>('');
 
   const activeCustomer = customers.find(c => c.id === selectedId) || customers[0] || null;
   const assessment = activeCustomer ? calculateRiskAssessment(activeCustomer, config) : null;
   const score10 = assessment ? getCalibratedScore10(assessment.riskScore) : 1;
   const catInfo = getCalibratedCategory(score10);
 
+  // Filter customers by search if entered
+  const matchedCustomers = guideSearchQuery.trim()
+    ? customers.filter(c => 
+        c.fullName.toLowerCase().includes(guideSearchQuery.toLowerCase()) ||
+        c.id.toLowerCase().includes(guideSearchQuery.toLowerCase()) ||
+        c.segment.toLowerCase().includes(guideSearchQuery.toLowerCase())
+      )
+    : customers.slice(0, 15);
+
   return (
-    <div className="max-w-[1400px] mx-auto pb-16 space-y-10">
+    <div className="max-w-[1400px] mx-auto pb-16 space-y-8">
       {/* Editorial Header */}
       <header className="border-b border-slate-200 pb-5">
         <div className="border-l-4 border-[#4338ca] pl-6 sm:pl-8">
@@ -56,55 +67,82 @@ export const ExplanationGuide: React.FC<ExplanationGuideProps> = ({
         </div>
       </header>
 
-      {/* Customer Pipeline Walkthrough Selector */}
-      <div className="bg-white border border-slate-200 rounded-2xl p-4 sm:p-5 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-indigo-50 border border-indigo-200 text-[#4338ca] flex items-center justify-center font-bold text-sm">
-            <Users className="w-5 h-5" />
+      {/* SEARCH BAR & LIVE WALKTHROUGH CONTROLS */}
+      <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs space-y-4">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+          {/* Search Bar with Icon and Clear Button */}
+          <div className="relative flex-1 max-w-xl">
+            <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+            <input
+              type="text"
+              placeholder="Search cardholder ID, name, or credit segment..."
+              value={guideSearchQuery}
+              onChange={(e) => setGuideSearchQuery(e.target.value)}
+              className="w-full pl-10 pr-9 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs sm:text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 font-sans"
+            />
+            {guideSearchQuery && (
+              <button
+                onClick={() => setGuideSearchQuery('')}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 hover:text-slate-600 font-bold"
+              >
+                ×
+              </button>
+            )}
           </div>
-          <div>
-            <h2 className="text-xs font-bold uppercase tracking-wider text-slate-500">Live Cardholder Walkthrough</h2>
-            <p className="text-sm font-bold text-slate-900">
-              {activeCustomer ? `${activeCustomer.fullName} (${activeCustomer.id})` : 'Select a customer'}
-            </p>
+
+          {/* Quick Select Profile Dropdown & Navigation Button */}
+          <div className="flex flex-wrap items-center gap-2.5">
+            <span className="text-xs text-slate-500 font-semibold">Walkthrough Profile:</span>
+            <select
+              value={selectedId}
+              onChange={(e) => {
+                setSelectedId(e.target.value);
+                onSelectCustomer(e.target.value);
+              }}
+              className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-500 max-w-[240px] truncate"
+            >
+              {matchedCustomers.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.id} — {c.fullName} ({c.segment})
+                </option>
+              ))}
+            </select>
+
+            <button
+              onClick={() => onNavigate('prediction')}
+              className="px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-colors cursor-pointer flex items-center gap-1 shadow-xs"
+            >
+              Open in ML Simulator →
+            </button>
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="text-xs text-slate-500 font-semibold">Test with profile:</span>
-          <select
-            value={selectedId}
-            onChange={(e) => {
-              setSelectedId(e.target.value);
-              onSelectCustomer(e.target.value);
-            }}
-            className="px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-500"
-          >
-            {customers.slice(0, 15).map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.id} — {c.fullName} ({c.cardType} · {c.segment})
-              </option>
-            ))}
-          </select>
-
-          <button
-            onClick={() => onNavigate('prediction')}
-            className="px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-colors cursor-pointer"
-          >
-            Open in ML Simulator →
-          </button>
+        {/* Selected Customer Snapshot Banner */}
+        <div className="pt-3 border-t border-slate-100 flex flex-wrap items-center justify-between text-xs text-slate-600 gap-2">
+          <div className="flex items-center gap-2">
+            <span className="font-bold text-slate-900">{activeCustomer?.fullName}</span>
+            <span className="font-mono text-[11px] text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded font-bold border border-indigo-200">
+              {activeCustomer?.id}
+            </span>
+            <span className="text-[11px] text-slate-500 font-medium">({activeCustomer?.cardType} · {activeCustomer?.segment})</span>
+          </div>
+          <div className="flex items-center gap-3 text-slate-500 font-mono text-[11px]">
+            <span>Limit: <strong className="text-slate-800 font-sans">${activeCustomer?.creditLimit.toLocaleString()}</strong></span>
+            <span>Balance: <strong className="text-slate-800 font-sans">${activeCustomer?.outstandingBalance.toLocaleString()}</strong></span>
+            <span>Utilization: <strong className="text-slate-800 font-sans">{activeCustomer?.creditUtilization}%</strong></span>
+          </div>
         </div>
       </div>
 
-      {/* PIPELINE CARDS CONTAINER (Matching user image style) */}
-      <div className="space-y-4">
+      {/* DEDICATED VERTICAL SPACING & VISUAL BREATHER (Clean and uncluttered layout separation) */}
+      <div className="pt-6 pb-2 space-y-4">
         <div className="flex items-center justify-between">
-          <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
-            <Layers className="w-4.5 h-4.5 text-[#4338ca]" />
-            <span>End-to-End Decision Pipeline Diagram</span>
-          </h2>
-          <span className="text-xs font-mono text-slate-500">5 Sequential Stages</span>
-        </div>
+            <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
+              <Layers className="w-4.5 h-4.5 text-[#4338ca]" />
+              <span>End-to-End Decision Pipeline Diagram</span>
+            </h2>
+            <span className="text-xs font-mono text-slate-500">5 Sequential Stages · Click stage to explore</span>
+          </div>
 
         {/* Horizontal Flow Container with Scroll */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 items-stretch">
@@ -251,7 +289,7 @@ export const ExplanationGuide: React.FC<ExplanationGuideProps> = ({
             </div>
 
             <div className="pt-2">
-              <div className="w-full py-1.5 px-3 rounded-full border border-blue-200 bg-blue-50 text-blue-800 text-[11px] font-semibold text-center">
+              <div className="w-full py-1.5 px-3 rounded-full border border-[#E5DFD4] bg-[#FAF7F2] text-[#8A3A28] text-[11px] font-semibold text-center">
                 default probability (PD) estimated
               </div>
             </div>
@@ -261,7 +299,7 @@ export const ExplanationGuide: React.FC<ExplanationGuideProps> = ({
           <div 
             onClick={() => setActiveStep(4)}
             className={`border rounded-2xl p-5 bg-white shadow-xs flex flex-col justify-between transition-all cursor-pointer relative ${
-              activeStep === 4 ? 'border-[#4338ca] ring-2 ring-indigo-200' : 'border-slate-200 hover:border-slate-300'
+              activeStep === 4 ? 'border-[#BA5641] ring-2 ring-[#BA5641]/20' : 'border-slate-200 hover:border-slate-300'
             }`}
           >
             <div>
@@ -466,9 +504,9 @@ export const ExplanationGuide: React.FC<ExplanationGuideProps> = ({
                     Low credit utilization (&lt;20%), pristine payment track records, and high liquidity. Safe for credit expansions.
                   </p>
                 </div>
-                <div className="p-3 bg-blue-50 border border-blue-200 rounded-xl">
-                  <span className="font-bold text-blue-900">Revolving Balances</span>
-                  <p className="text-blue-700 mt-1">
+                <div className="p-3 bg-[#FAF7F2] border border-[#EBE6DC] rounded-xl">
+                  <span className="font-bold text-[#8A3A28]">Revolving Balances</span>
+                  <p className="text-[#767069] mt-1">
                     Carries balances month-to-month but makes regular payments. Bank&apos;s main interest-generating segment.
                   </p>
                 </div>
@@ -543,7 +581,7 @@ export const ExplanationGuide: React.FC<ExplanationGuideProps> = ({
                 onClick={() => onNavigate('prediction')}
                 className="w-full mt-2 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-lg transition-colors cursor-pointer text-center"
               >
-                Compare All 4 ML Models →
+                Compare Primary &amp; Comparison ML Models →
               </button>
             </div>
           </div>

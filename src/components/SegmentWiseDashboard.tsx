@@ -54,6 +54,7 @@ export const SegmentWiseDashboard: React.FC<SegmentWiseDashboardProps> = ({
   const [hoveredCustomer, setHoveredCustomer] = useState<Customer | null>(null);
   const [selectedDotCustomer, setSelectedDotCustomer] = useState<Customer | null>(null);
   const [showValueLabels, setShowValueLabels] = useState<boolean>(false);
+  const [distViewMetric, setDistViewMetric] = useState<'count' | 'exposure'>('count');
 
   // Policy Simulator States
   const [limitAdjustmentPct, setLimitAdjustmentPct] = useState<number>(0);
@@ -89,16 +90,21 @@ export const SegmentWiseDashboard: React.FC<SegmentWiseDashboardProps> = ({
     };
   }, [config]);
 
-  // Available unique segments
+  // Available unique segments in standard risk-ascending portfolio order
   const uniqueSegments = useMemo(() => {
-    const list = Array.from(new Set(customers.map((c) => c.segment).filter(Boolean)));
-    return list.length > 0 ? list : [
+    const canonicalOrder = [
       'Prime Transactors',
       'Revolving Balances',
+      'Emerging Young Borrowers',
       'Elevated Leverage',
-      'Delinquency Watchlist',
-      'Emerging Young Borrowers'
+      'Delinquency Watchlist'
     ];
+    const presentSegments = Array.from(new Set(customers.map((c) => c.segment).filter(Boolean)));
+    const sorted = canonicalOrder.filter((seg) => presentSegments.includes(seg));
+    presentSegments.forEach((seg) => {
+      if (!sorted.includes(seg)) sorted.push(seg);
+    });
+    return sorted.length > 0 ? sorted : canonicalOrder;
   }, [customers]);
 
   // Filtered customers for active segment and risk filter
@@ -160,6 +166,251 @@ export const SegmentWiseDashboard: React.FC<SegmentWiseDashboardProps> = ({
       };
     });
   }, [customers, uniqueSegments, config]);
+
+  // Credit Risk Distribution: Low, Medium, High categories based on actual dataset & active segment filter
+  const riskDistribution = useMemo(() => {
+    const cohort = selectedSegment === 'All' ? customers : customers.filter((c) => c.segment === selectedSegment);
+    const scored = cohort.map((c) => ({
+      customer: c,
+      assessment: calculateRiskAssessment(c, config),
+    }));
+
+    const low = scored.filter((s) => s.assessment.riskTier === 'Low');
+    const med = scored.filter((s) => s.assessment.riskTier === 'Medium');
+    const high = scored.filter((s) => s.assessment.riskTier === 'High');
+
+    const total = scored.length;
+    const lowExposure = low.reduce((sum, s) => sum + (s.customer.outstandingBalance || 0), 0);
+    const medExposure = med.reduce((sum, s) => sum + (s.customer.outstandingBalance || 0), 0);
+    const highExposure = high.reduce((sum, s) => sum + (s.customer.outstandingBalance || 0), 0);
+    const totalExposure = lowExposure + medExposure + highExposure;
+
+    const lowAvgPd = low.length > 0 ? low.reduce((sum, s) => sum + s.assessment.defaultProbability, 0) / low.length : 0;
+    const medAvgPd = med.length > 0 ? med.reduce((sum, s) => sum + s.assessment.defaultProbability, 0) / med.length : 0;
+    const highAvgPd = high.length > 0 ? high.reduce((sum, s) => sum + s.assessment.defaultProbability, 0) / high.length : 0;
+
+    const lowAvgUtil = low.length > 0 ? low.reduce((sum, s) => sum + (s.customer.creditUtilization || 0), 0) / low.length : 0;
+    const medAvgUtil = med.length > 0 ? med.reduce((sum, s) => sum + (s.customer.creditUtilization || 0), 0) / med.length : 0;
+    const highAvgUtil = high.length > 0 ? high.reduce((sum, s) => sum + (s.customer.creditUtilization || 0), 0) / high.length : 0;
+
+    const maxCount = Math.max(1, low.length, med.length, high.length);
+    const maxExposure = Math.max(1, lowExposure, medExposure, highExposure);
+
+    return {
+      total,
+      totalExposure,
+      maxCount,
+      maxExposure,
+      tiers: [
+        {
+          key: 'Low' as const,
+          label: 'Low Risk',
+          scoreRange: 'Score ≤ 34',
+          count: low.length,
+          pct: total > 0 ? (low.length / total) * 100 : 0,
+          exposure: lowExposure,
+          exposurePct: totalExposure > 0 ? (lowExposure / totalExposure) * 100 : 0,
+          avgPd: lowAvgPd,
+          avgUtil: lowAvgUtil,
+          barColor: '#10b981',
+          bgClass: 'bg-emerald-500',
+          lightBgClass: 'bg-emerald-50/70',
+          borderClass: 'border-emerald-200',
+          textClass: 'text-emerald-700',
+          badgeClass: 'bg-emerald-100 text-emerald-800 border border-emerald-200',
+          policy: 'Eligible for credit line expansion & prime rewards'
+        },
+        {
+          key: 'Medium' as const,
+          label: 'Medium Risk',
+          scoreRange: 'Score 35–64',
+          count: med.length,
+          pct: total > 0 ? (med.length / total) * 100 : 0,
+          exposure: medExposure,
+          exposurePct: totalExposure > 0 ? (medExposure / totalExposure) * 100 : 0,
+          avgPd: medAvgPd,
+          avgUtil: medAvgUtil,
+          barColor: '#f59e0b',
+          bgClass: 'bg-amber-500',
+          lightBgClass: 'bg-amber-50/70',
+          borderClass: 'border-amber-200',
+          textClass: 'text-amber-700',
+          badgeClass: 'bg-amber-100 text-amber-800 border border-amber-200',
+          policy: 'Standard account monitoring & mid-cycle balance alerts'
+        },
+        {
+          key: 'High' as const,
+          label: 'High Risk',
+          scoreRange: 'Score ≥ 65',
+          count: high.length,
+          pct: total > 0 ? (high.length / total) * 100 : 0,
+          exposure: highExposure,
+          exposurePct: totalExposure > 0 ? (highExposure / totalExposure) * 100 : 0,
+          avgPd: highAvgPd,
+          avgUtil: highAvgUtil,
+          barColor: '#ef4444',
+          bgClass: 'bg-rose-500',
+          lightBgClass: 'bg-rose-50/70',
+          borderClass: 'border-rose-200',
+          textClass: 'text-rose-700',
+          badgeClass: 'bg-rose-100 text-rose-800 border border-rose-200',
+          policy: 'Workout desk assignment & cash-advance facility cap'
+        }
+      ]
+    };
+  }, [customers, selectedSegment, config]);
+
+  // Comparative Segment Benchmark Matrix calculated directly from existing dataset
+  const comparativeSegmentMatrix = useMemo(() => {
+    const totalPortfolioCount = customers.length || 1;
+    const totalPortfolioExposure = customers.reduce((sum, c) => sum + (c.outstandingBalance || 0), 0);
+
+    const segmentStrategies: Record<string, { tagline: string; strategy: string }> = {
+      'Prime Transactors': {
+        tagline: 'High liquidity, pristine payment history, low revolving utilization (<25%)',
+        strategy: 'Extend prime credit lines by 15–20% and market tier-1 rewards programs.'
+      },
+      'Revolving Balances': {
+        tagline: 'Core revolving cohort, steady payment behaviour, primary interest generator',
+        strategy: 'Maintain regular quarterly line reviews; offer automated balance sweep features.'
+      },
+      'Elevated Leverage': {
+        tagline: 'High utilization (60%+), elevated debt-to-income sensitivity',
+        strategy: 'Cap ATM cash advance facilities to 10% and mandate 3.5% minimum monthly payment.'
+      },
+      'Delinquency Watchlist': {
+        tagline: 'Chronic payment delays (6M), acute default hazard (90+ DPD)',
+        strategy: 'Immediate credit line freeze/curtailment of 20% and proactive workout desk contact.'
+      },
+      'Emerging Young Borrowers': {
+        tagline: 'Shorter credit tenure, lower line ceiling, active credit reputation building',
+        strategy: 'Graduated credit line growth tied to consecutive on-time payment milestones.'
+      }
+    };
+
+    const rows = uniqueSegments.map((segName) => {
+      // Base cohort for this segment
+      const segAllCusts = customers.filter((c) => c.segment === segName);
+      const totalCount = segAllCusts.length;
+      const sharePct = totalPortfolioCount > 0 ? (totalCount / totalPortfolioCount) * 100 : 0;
+
+      // Filtered cohort (respects matrixRiskFilter)
+      const segFilteredCusts = matrixRiskFilter === 'All' 
+        ? segAllCusts 
+        : segAllCusts.filter((c) => {
+            const assessment = calculateRiskAssessment(c, config);
+            return assessment.riskTier === matrixRiskFilter;
+          });
+      
+      const filteredCount = segFilteredCusts.length;
+
+      // Calculated values from actual customer records
+      const totalExposure = segAllCusts.reduce((sum, c) => sum + (c.outstandingBalance || 0), 0);
+      const filteredExposure = segFilteredCusts.reduce((sum, c) => sum + (c.outstandingBalance || 0), 0);
+      
+      const avgUtil = totalCount > 0
+        ? segAllCusts.reduce((sum, c) => sum + (c.creditUtilization || 0), 0) / totalCount
+        : 0;
+      
+      const avgBal = totalCount > 0
+        ? totalExposure / totalCount
+        : 0;
+
+      const avgInc = totalCount > 0
+        ? segAllCusts.reduce((sum, c) => sum + (c.annualIncome || 0), 0) / totalCount
+        : 0;
+
+      const avgLimit = totalCount > 0
+        ? segAllCusts.reduce((sum, c) => sum + (c.creditLimit || 0), 0) / totalCount
+        : 0;
+
+      // Real observed default rate from dataset (accounts with actualDefault === 1 or 3+ late payments)
+      const defCount = segAllCusts.filter((c) => c.actualDefault === 1 || c.delayedPayments6M >= 3).length;
+      const defaultRate = totalCount > 0 ? (defCount / totalCount) * 100 : 0;
+
+      // Model predicted PD (average across all cardholders in this segment)
+      const avgPd = totalCount > 0
+        ? segAllCusts.reduce((sum, c) => sum + calculateRiskAssessment(c, config).defaultProbability, 0) / totalCount
+        : 0;
+
+      // Filtered cohort averages (when a risk filter is active)
+      const filteredAvgUtil = filteredCount > 0
+        ? segFilteredCusts.reduce((sum, c) => sum + (c.creditUtilization || 0), 0) / filteredCount
+        : 0;
+      const filteredAvgBal = filteredCount > 0
+        ? filteredExposure / filteredCount
+        : 0;
+      const filteredAvgPd = filteredCount > 0
+        ? segFilteredCusts.reduce((sum, c) => sum + calculateRiskAssessment(c, config).defaultProbability, 0) / filteredCount
+        : 0;
+
+      const meta = segmentStrategies[segName] || {
+        tagline: 'K-Means behavioral cohort benchmark',
+        strategy: 'Standard underwriting monitoring with scheduled portfolio reviews.'
+      };
+
+      return {
+        name: segName,
+        tagline: meta.tagline,
+        strategy: meta.strategy,
+        totalCount,
+        sharePct,
+        filteredCount,
+        totalExposure,
+        filteredExposure,
+        avgUtil,
+        avgBal,
+        avgInc,
+        avgLimit,
+        avgPd,
+        defaultRate,
+        defCount,
+        filteredAvgUtil,
+        filteredAvgBal,
+        filteredAvgPd
+      };
+    });
+
+    // Portfolio Totals
+    const portfolioDefCount = customers.filter((c) => c.actualDefault === 1 || c.delayedPayments6M >= 3).length;
+    const portfolioDefaultRate = totalPortfolioCount > 0 ? (portfolioDefCount / totalPortfolioCount) * 100 : 0;
+    const portfolioAvgUtil = totalPortfolioCount > 0 
+      ? customers.reduce((sum, c) => sum + (c.creditUtilization || 0), 0) / totalPortfolioCount 
+      : 0;
+    const portfolioAvgBal = totalPortfolioCount > 0 
+      ? totalPortfolioExposure / totalPortfolioCount 
+      : 0;
+    const portfolioAvgInc = totalPortfolioCount > 0 
+      ? customers.reduce((sum, c) => sum + (c.annualIncome || 0), 0) / totalPortfolioCount 
+      : 0;
+    const portfolioAvgPd = totalPortfolioCount > 0 
+      ? customers.reduce((sum, c) => sum + calculateRiskAssessment(c, config).defaultProbability, 0) / totalPortfolioCount 
+      : 0;
+
+    const filteredTotalCount = matrixRiskFilter === 'All'
+      ? totalPortfolioCount
+      : customers.filter((c) => calculateRiskAssessment(c, config).riskTier === matrixRiskFilter).length;
+    const filteredTotalExposure = matrixRiskFilter === 'All'
+      ? totalPortfolioExposure
+      : customers.filter((c) => calculateRiskAssessment(c, config).riskTier === matrixRiskFilter).reduce((sum, c) => sum + (c.outstandingBalance || 0), 0);
+
+    return {
+      rows,
+      totals: {
+        totalCount: totalPortfolioCount,
+        totalExposure: totalPortfolioExposure,
+        filteredCount: filteredTotalCount,
+        filteredExposure: filteredTotalExposure,
+        avgUtil: portfolioAvgUtil,
+        avgBal: portfolioAvgBal,
+        avgInc: portfolioAvgInc,
+        avgPd: portfolioAvgPd,
+        defaultRate: portfolioDefaultRate,
+        defCount: portfolioDefCount,
+        strategy: 'Basel II / IFRS 9 Multi-Tier Risk Governance Policy'
+      }
+    };
+  }, [customers, uniqueSegments, matrixRiskFilter, config]);
 
   // Aggregate metrics for active segment
   const segmentStats = useMemo(() => {
@@ -314,10 +565,10 @@ export const SegmentWiseDashboard: React.FC<SegmentWiseDashboardProps> = ({
           <div className="flex items-center gap-2">
             <button
               onClick={() => onNavigate('customer-dashboard')}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 rounded-xl text-xs font-bold border border-indigo-200 transition-colors cursor-pointer"
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-[#FAF7F2] text-[#8A3A28] hover:bg-[#F5EBE6] rounded-xl text-xs font-bold border border-[#EBE6DC] transition-colors cursor-pointer"
             >
               Switch to Customer-Wise View
-              <ChevronRight className="w-4 h-4" />
+              <ChevronRight className="w-4 h-4 text-[#BA5641]" />
             </button>
           </div>
         </div>
@@ -352,7 +603,7 @@ export const SegmentWiseDashboard: React.FC<SegmentWiseDashboardProps> = ({
                 }}
                 className={`px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
                   isSelected
-                    ? 'bg-indigo-600 text-white shadow-xs'
+                    ? 'bg-[#BA5641] text-white shadow-xs'
                     : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
                 }`}
               >
@@ -361,7 +612,7 @@ export const SegmentWiseDashboard: React.FC<SegmentWiseDashboardProps> = ({
                   style={{ backgroundColor: color.dot }}
                 />
                 <span>{seg}</span>
-                <span className={`text-[10px] px-1.5 py-0.2 rounded-full ${isSelected ? 'bg-indigo-700 text-indigo-100' : 'bg-slate-200 text-slate-600'}`}>
+                <span className={`text-[10px] px-1.5 py-0.2 rounded-full ${isSelected ? 'bg-[#A54935] text-white' : 'bg-slate-200 text-slate-600'}`}>
                   {count}
                 </span>
               </button>
@@ -475,7 +726,7 @@ export const SegmentWiseDashboard: React.FC<SegmentWiseDashboardProps> = ({
               </h2>
             </div>
             <p className="text-xs text-slate-500 mt-0.5">
-              Every dot is a cardholder. Left-to-right shows percentage of credit limit used (0% to 100%). Bottom-to-top shows current unpaid balance ($0 to $25k).
+              Every dot represents an individual credit card account ({activeCustomers.length} plotted). Left-to-right is utilization rate (0% to 100%). Bottom-to-top is current unpaid balance ($0 to $25k).
             </p>
           </div>
 
@@ -537,7 +788,7 @@ export const SegmentWiseDashboard: React.FC<SegmentWiseDashboardProps> = ({
                   onSelectCustomer(selectedDotCustomer.id);
                   onNavigate('customer-dashboard');
                 }}
-                className="px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-bold shadow-xs flex items-center gap-1 cursor-pointer"
+                className="px-3.5 py-1.5 bg-[#BA5641] hover:bg-[#A54935] text-white rounded-lg text-xs font-bold shadow-xs flex items-center gap-1 cursor-pointer"
               >
                 Open in Customer Dashboard <ChevronRight className="w-3.5 h-3.5" />
               </button>
@@ -551,10 +802,10 @@ export const SegmentWiseDashboard: React.FC<SegmentWiseDashboardProps> = ({
           </div>
         )}
 
-        {/* The SVG Scatter Plot Container */}
-        <div className="relative w-full h-[480px] bg-white border border-slate-200 rounded-xl overflow-hidden p-2 select-none">
-          {/* Quadrant Background Watermarks (Positioned inside the chart boundaries: Left 8% to 92%, Top 8% to 86%) */}
-          <div className="absolute left-[8%] right-[8%] top-[8%] bottom-[14%] grid grid-cols-2 grid-rows-2 pointer-events-none">
+        {/* The SVG Scatter Plot Container with Expanded Margins & Zero Clipping */}
+        <div className="relative w-full h-[520px] sm:h-[560px] bg-white border border-slate-200 rounded-xl overflow-hidden p-3 select-none">
+          {/* Quadrant Background Watermarks (Aligned to inner axes: Left 12% to 94%, Top 10% to 84%) */}
+          <div className="absolute left-[12%] right-[6%] top-[10%] bottom-[16%] grid grid-cols-2 grid-rows-2 pointer-events-none">
             {/* Top-Left Quadrant */}
             <div className="border-r border-b border-dashed border-slate-200/80 p-3 bg-indigo-50/20">
               <span className="text-[10px] font-bold uppercase tracking-wider text-indigo-700/80 bg-indigo-100/70 px-2 py-0.5 rounded">
@@ -581,32 +832,32 @@ export const SegmentWiseDashboard: React.FC<SegmentWiseDashboardProps> = ({
             </div>
           </div>
 
-          {/* Glitch-Free SVG Canvas with Fixed Coordinate ViewBox and Native Percentages */}
+          {/* Glitch-Free Responsive SVG Canvas */}
           <svg className="w-full h-full relative z-10 overflow-visible">
             {/* HORIZONTAL GRID LINES & Y-AXIS LABELS */}
             {[
-              { val: 25000, label: '$25,000', yPct: 8 },
-              { val: 20000, label: '$20,000', yPct: 23.6 },
-              { val: 15000, label: '$15,000', yPct: 39.2 },
-              { val: 10000, label: '$10,000', yPct: 54.8 },
-              { val: 5000,  label: '$5,000',  yPct: 70.4 },
-              { val: 0,     label: '$0',      yPct: 86 }
+              { val: 25000, label: '$25,000', yPct: 10 },
+              { val: 20000, label: '$20,000', yPct: 24.8 },
+              { val: 15000, label: '$15,000', yPct: 39.6 },
+              { val: 10000, label: '$10,000', yPct: 54.4 },
+              { val: 5000,  label: '$5,000',  yPct: 69.2 },
+              { val: 0,     label: '$0',      yPct: 84 }
             ].map((tick) => (
               <g key={`y-${tick.val}`}>
                 <line
-                  x1="8%"
+                  x1="12%"
                   y1={`${tick.yPct}%`}
-                  x2="92%"
+                  x2="94%"
                   y2={`${tick.yPct}%`}
                   stroke="#f1f5f9"
                   strokeWidth="1"
                 />
                 <text
-                  x="7.2%"
+                  x="10.8%"
                   y={`${tick.yPct}%`}
                   textAnchor="end"
                   dominantBaseline="middle"
-                  className="text-[10px] font-mono font-medium fill-slate-400"
+                  className="text-[10px] font-mono font-semibold fill-slate-500"
                 >
                   {tick.label}
                 </text>
@@ -615,67 +866,68 @@ export const SegmentWiseDashboard: React.FC<SegmentWiseDashboardProps> = ({
 
             {/* VERTICAL GRID LINES & X-AXIS LABELS */}
             {[
-              { val: 0,   label: '0%',   xPct: 8 },
-              { val: 20,  label: '20%',  xPct: 24.8 },
-              { val: 40,  label: '40%',  xPct: 41.6 },
-              { val: 60,  label: '60%',  xPct: 58.4 },
-              { val: 80,  label: '80%',  xPct: 75.2 },
-              { val: 100, label: '100%', xPct: 92 }
+              { val: 0,   label: '0%',   xPct: 12 },
+              { val: 20,  label: '20%',  xPct: 28.4 },
+              { val: 40,  label: '40%',  xPct: 44.8 },
+              { val: 60,  label: '60%',  xPct: 61.2 },
+              { val: 80,  label: '80%',  xPct: 77.6 },
+              { val: 100, label: '100%', xPct: 94 }
             ].map((tick) => (
               <g key={`x-${tick.val}`}>
                 <line
                   x1={`${tick.xPct}%`}
-                  y1="8%"
+                  y1="10%"
                   x2={`${tick.xPct}%`}
-                  y2="86%"
+                  y2="84%"
                   stroke="#f1f5f9"
                   strokeWidth="1"
                 />
                 <text
                   x={`${tick.xPct}%`}
-                  y="90.5%"
+                  y="88.5%"
                   textAnchor="middle"
-                  className="text-[10px] font-mono font-medium fill-slate-400"
+                  dominantBaseline="middle"
+                  className="text-[10px] font-mono font-semibold fill-slate-500"
                 >
                   {tick.label}
                 </text>
               </g>
             ))}
 
-            {/* 30% Utilization Prime Ceiling Guide */}
+            {/* 30% Utilization Prime Ceiling Guide Line */}
             <line
-              x1={`${8 + (30 / 100) * 84}%`}
-              y1="8%"
-              x2={`${8 + (30 / 100) * 84}%`}
-              y2="86%"
+              x1={`${12 + (30 / 100) * 82}%`}
+              y1="10%"
+              x2={`${12 + (30 / 100) * 82}%`}
+              y2="84%"
               stroke="#10b981"
-              strokeWidth="1"
+              strokeWidth="1.2"
               strokeDasharray="4 4"
-              opacity="0.6"
+              opacity="0.75"
             />
             <text
-              x={`${8 + (30 / 100) * 84}%`}
-              y="6%"
+              x={`${12 + (30 / 100) * 82}%`}
+              y="7.5%"
               textAnchor="middle"
               className="text-[9px] font-bold fill-emerald-600 uppercase tracking-wider"
             >
               30% Prime Limit
             </text>
 
-            {/* 75% Critical Threshold Line */}
+            {/* 75% Critical Danger Threshold Line */}
             <line
-              x1={`${8 + (75 / 100) * 84}%`}
-              y1="8%"
-              x2={`${8 + (75 / 100) * 84}%`}
-              y2="86%"
+              x1={`${12 + (75 / 100) * 82}%`}
+              y1="10%"
+              x2={`${12 + (75 / 100) * 82}%`}
+              y2="84%"
               stroke="#ef4444"
-              strokeWidth="1"
+              strokeWidth="1.2"
               strokeDasharray="4 4"
-              opacity="0.6"
+              opacity="0.75"
             />
             <text
-              x={`${8 + (75 / 100) * 84}%`}
-              y="6%"
+              x={`${12 + (75 / 100) * 82}%`}
+              y="7.5%"
               textAnchor="middle"
               className="text-[9px] font-bold fill-rose-600 uppercase tracking-wider"
             >
@@ -683,21 +935,21 @@ export const SegmentWiseDashboard: React.FC<SegmentWiseDashboardProps> = ({
             </text>
 
             {/* Chart Outer Axes */}
-            <line x1="8%" y1="86%" x2="92%" y2="86%" stroke="#cbd5e1" strokeWidth="1.5" />
-            <line x1="8%" y1="8%" x2="8%" y2="86%" stroke="#cbd5e1" strokeWidth="1.5" />
+            <line x1="12%" y1="84%" x2="94%" y2="84%" stroke="#94a3b8" strokeWidth="1.5" />
+            <line x1="12%" y1="10%" x2="12%" y2="84%" stroke="#94a3b8" strokeWidth="1.5" />
 
-            {/* Axis Titles */}
-            <text x="50%" y="97%" textAnchor="middle" className="text-[11px] font-bold fill-slate-600 tracking-wide uppercase">
+            {/* Axis Titles (Padded cleanly to prevent clipping) */}
+            <text x="53%" y="95%" textAnchor="middle" className="text-[11px] font-bold fill-slate-700 tracking-wide uppercase">
               Credit Card Utilization Rate (% of Card Limit) →
             </text>
-            <text x="2%" y="4%" className="text-[11px] font-bold fill-slate-600 tracking-wide uppercase">
+            <text x="12%" y="5%" className="text-[11px] font-bold fill-slate-700 tracking-wide uppercase">
               ↑ Current Unpaid Balance ($)
             </text>
 
             {/* DYNAMIC CROSSHAIR LINES FOR HOVERED OR SELECTED CUSTOMER */}
             {hoveredCustomer && (() => {
-              const hx = 8 + (Math.min(100, Math.max(0, hoveredCustomer.creditUtilization)) / 100) * 84;
-              const hy = 86 - (Math.min(25000, Math.max(0, hoveredCustomer.outstandingBalance)) / 25000) * 78;
+              const hx = 12 + (Math.min(100, Math.max(0, hoveredCustomer.creditUtilization)) / 100) * 82;
+              const hy = 84 - (Math.min(25000, Math.max(0, hoveredCustomer.outstandingBalance)) / 25000) * 74;
               return (
                 <g pointerEvents="none">
                   {/* Vertical line to X-axis */}
@@ -705,14 +957,14 @@ export const SegmentWiseDashboard: React.FC<SegmentWiseDashboardProps> = ({
                     x1={`${hx}%`}
                     y1={`${hy}%`}
                     x2={`${hx}%`}
-                    y2="86%"
+                    y2="84%"
                     stroke="#4338ca"
                     strokeWidth="1.5"
                     strokeDasharray="3 3"
                   />
                   {/* Horizontal line to Y-axis */}
                   <line
-                    x1="8%"
+                    x1="12%"
                     y1={`${hy}%`}
                     x2={`${hx}%`}
                     y2={`${hy}%`}
@@ -723,15 +975,15 @@ export const SegmentWiseDashboard: React.FC<SegmentWiseDashboardProps> = ({
                   {/* Highlight Pill on X Axis */}
                   <rect
                     x={`${hx - 3.5}%`}
-                    y="87%"
+                    y="85%"
                     width="7%"
-                    height="16"
+                    height="18"
                     rx="4"
                     fill="#4338ca"
                   />
                   <text
                     x={`${hx}%`}
-                    y="90.5%"
+                    y="89%"
                     textAnchor="middle"
                     className="text-[10px] font-bold fill-white font-mono"
                   >
@@ -739,15 +991,15 @@ export const SegmentWiseDashboard: React.FC<SegmentWiseDashboardProps> = ({
                   </text>
                   {/* Highlight Pill on Y Axis */}
                   <rect
-                    x="0.5%"
-                    y={`${hy - 2}%`}
-                    width="7.2%"
-                    height="16"
+                    x="2.5%"
+                    y={`${hy - 2.2}%`}
+                    width="9%"
+                    height="18"
                     rx="4"
                     fill="#4338ca"
                   />
                   <text
-                    x="4.1%"
+                    x="7%"
                     y={`${hy}%`}
                     textAnchor="middle"
                     dominantBaseline="middle"
@@ -759,10 +1011,19 @@ export const SegmentWiseDashboard: React.FC<SegmentWiseDashboardProps> = ({
               );
             })()}
 
-            {/* RENDER SCATTER DOTS: Separate hit target from visual dot to guarantee zero flickering! */}
+            {/* RENDER SCATTER DOTS: Optimized marker size (r=4.0) with subtle deterministic jitter to prevent total overlap */}
             {activeCustomers.map((c) => {
-              const cxPct = 8 + (Math.min(100, Math.max(0, c.creditUtilization)) / 100) * 84;
-              const cyPct = 86 - (Math.min(25000, Math.max(0, c.outstandingBalance)) / 25000) * 78;
+              // Deterministic micro-jitter to prevent points with identical coordinates from stacking completely invisibly
+              const idSum = c.id.split('').reduce((acc, ch) => acc + ch.charCodeAt(0), 0);
+              const jitterX = (((idSum * 7) % 13) - 6) * 0.08;
+              const jitterY = (((idSum * 11) % 13) - 6) * 0.08;
+
+              const rawX = 12 + (Math.min(100, Math.max(0, c.creditUtilization)) / 100) * 82;
+              const rawY = 84 - (Math.min(25000, Math.max(0, c.outstandingBalance)) / 25000) * 74;
+
+              const cxPct = Math.max(12.5, Math.min(93.5, rawX + jitterX));
+              const cyPct = Math.max(10.5, Math.min(83.5, rawY + jitterY));
+
               const colorInfo = SEGMENT_COLORS[c.segment] || DEFAULT_SEGMENT_COLOR;
               const isSelected = selectedDotCustomer?.id === c.id;
               const isHovered = hoveredCustomer?.id === c.id;
@@ -774,7 +1035,7 @@ export const SegmentWiseDashboard: React.FC<SegmentWiseDashboardProps> = ({
                     <circle
                       cx={`${cxPct}%`}
                       cy={`${cyPct}%`}
-                      r={13}
+                      r={11}
                       fill="none"
                       stroke={colorInfo.dot}
                       strokeWidth={2}
@@ -783,13 +1044,13 @@ export const SegmentWiseDashboard: React.FC<SegmentWiseDashboardProps> = ({
                     />
                   )}
 
-                  {/* Visual Circle (no CSS scale transforms = zero jitter) */}
+                  {/* Visual Circle (crisp r=4.0 default prevents crowding while maintaining distinct visibility) */}
                   <circle
                     cx={`${cxPct}%`}
                     cy={`${cyPct}%`}
-                    r={isSelected ? 8.5 : isHovered ? 7.5 : 5.5}
+                    r={isSelected ? 7.5 : isHovered ? 6.5 : 4.0}
                     fill={colorInfo.dot}
-                    fillOpacity={isSelected || isHovered ? 1 : 0.82}
+                    fillOpacity={isSelected || isHovered ? 1 : 0.76}
                     stroke={isSelected ? '#0f172a' : isHovered ? '#1e1b4b' : '#ffffff'}
                     strokeWidth={isSelected ? 2.5 : isHovered ? 2 : 1.2}
                     pointerEvents="none"
@@ -806,11 +1067,11 @@ export const SegmentWiseDashboard: React.FC<SegmentWiseDashboardProps> = ({
                     </text>
                   )}
 
-                  {/* Transparent enlarged hit-target: handles all clicks and hover events seamlessly */}
+                  {/* Enlarged hit-target: handles all clicks and hover events seamlessly */}
                   <circle
                     cx={`${cxPct}%`}
                     cy={`${cyPct}%`}
-                    r={14}
+                    r={13}
                     fill="transparent"
                     className="cursor-pointer"
                     onClick={() => setSelectedDotCustomer(c)}
@@ -826,20 +1087,23 @@ export const SegmentWiseDashboard: React.FC<SegmentWiseDashboardProps> = ({
             })}
           </svg>
 
-          {/* GLITCH-FREE POPUP TOOLTIP: Anchored directly to dot percentages inside container with pointer-events-none */}
+          {/* GLITCH-FREE POPUP TOOLTIP: Responsive clamped positioning ensures it is never clipped */}
           {hoveredCustomer && (() => {
-            const tipX = 8 + (Math.min(100, Math.max(0, hoveredCustomer.creditUtilization)) / 100) * 84;
-            const tipY = 86 - (Math.min(25000, Math.max(0, hoveredCustomer.outstandingBalance)) / 25000) * 78;
-            const isTop = tipY < 38;
-            const isFarRight = tipX > 72;
-            const isFarLeft = tipX < 28;
+            const rawX = 12 + (Math.min(100, Math.max(0, hoveredCustomer.creditUtilization)) / 100) * 82;
+            const rawY = 84 - (Math.min(25000, Math.max(0, hoveredCustomer.outstandingBalance)) / 25000) * 74;
+            const tipX = rawX;
+            const tipY = rawY;
+
+            const isTop = tipY < 42;
+            const isFarRight = tipX > 68;
+            const isFarLeft = tipX < 32;
 
             return (
               <div
-                className={`absolute z-30 pointer-events-none bg-slate-900/95 text-white p-3.5 rounded-xl shadow-2xl border border-slate-700 backdrop-blur-xs min-w-[230px] transition-opacity duration-150 ${
-                  isTop ? 'translate-y-4' : '-translate-y-[calc(100%+14px)]'
+                className={`absolute z-30 pointer-events-none bg-slate-900/95 text-white p-3.5 rounded-xl shadow-2xl border border-slate-700 backdrop-blur-md min-w-[240px] max-w-[280px] transition-all duration-150 ${
+                  isTop ? 'translate-y-3' : '-translate-y-[calc(100%+14px)]'
                 } ${
-                  isFarRight ? '-translate-x-[90%]' : isFarLeft ? '-translate-x-[10%]' : '-translate-x-1/2'
+                  isFarRight ? '-translate-x-[92%]' : isFarLeft ? 'translate-x-[4%]' : '-translate-x-1/2'
                 }`}
                 style={{ left: `${tipX}%`, top: `${tipY}%` }}
               >
@@ -882,6 +1146,245 @@ export const SegmentWiseDashboard: React.FC<SegmentWiseDashboardProps> = ({
               </div>
             );
           })()}
+        </div>
+      </div>
+
+      {/* VISUALIZATION: Customer Credit Risk Distribution Bar Chart */}
+      <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-xs space-y-5">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-4">
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="w-2.5 h-2.5 rounded-full bg-emerald-600" />
+              <h2 className="text-lg font-black text-slate-900">
+                Customer Distribution Across Credit-Risk Categories
+              </h2>
+            </div>
+            <p className="text-xs text-slate-500 mt-0.5">
+              Breakdown of <span className="font-bold text-slate-800">{riskDistribution.total}</span> cardholders in {selectedSegment === 'All' ? 'the entire portfolio' : `[${selectedSegment}]`} across Low, Medium, and High risk categories based on actual model scores.
+            </p>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2">
+            {/* View Mode Toggle: Count vs Exposure */}
+            <div className="flex items-center bg-slate-100 p-1 rounded-xl">
+              <button
+                onClick={() => setDistViewMetric('count')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                  distViewMetric === 'count'
+                    ? 'bg-white text-slate-900 shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                Cardholder Count (#)
+              </button>
+              <button
+                onClick={() => setDistViewMetric('exposure')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                  distViewMetric === 'exposure'
+                    ? 'bg-white text-slate-900 shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                Revolving Balance ($)
+              </button>
+            </div>
+
+            {/* Quick Reset Filter if Active */}
+            {matrixRiskFilter !== 'All' && (
+              <button
+                onClick={() => setMatrixRiskFilter('All')}
+                className="px-2.5 py-1.5 bg-indigo-50 border border-indigo-200 text-indigo-700 rounded-xl text-xs font-bold cursor-pointer hover:bg-indigo-100 flex items-center gap-1"
+              >
+                <span>Filtered: {matrixRiskFilter} Risk</span>
+                <span className="text-indigo-400">×</span>
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Dynamic Responsive SVG Bar Chart */}
+        <div className="relative w-full h-72 sm:h-80 bg-slate-50/50 border border-slate-200 rounded-xl p-4 select-none">
+          {/* SVG Canvas for Bar Chart */}
+          <svg className="w-full h-full overflow-visible">
+            {/* Horizontal Gridlines & Y-Axis Labels */}
+            {[0, 0.25, 0.5, 0.75, 1.0].map((step, idx) => {
+              const yPct = 82 - step * 68; // 82% is bottom baseline, 14% is top
+              const maxVal = distViewMetric === 'count' ? riskDistribution.maxCount : riskDistribution.maxExposure;
+              const tickVal = Math.round(maxVal * step);
+              const label = distViewMetric === 'count' 
+                ? tickVal.toString()
+                : `$${(tickVal / 1000).toFixed(0)}k`;
+
+              return (
+                <g key={`bar-grid-${idx}`}>
+                  <line
+                    x1="12%"
+                    y1={`${yPct}%`}
+                    x2="95%"
+                    y2={`${yPct}%`}
+                    stroke="#e2e8f0"
+                    strokeWidth="1"
+                    strokeDasharray={step === 0 ? 'none' : '3 3'}
+                  />
+                  <text
+                    x="10.5%"
+                    y={`${yPct}%`}
+                    textAnchor="end"
+                    dominantBaseline="middle"
+                    className="text-[10px] font-mono font-medium fill-slate-400"
+                  >
+                    {label}
+                  </text>
+                </g>
+              );
+            })}
+
+            {/* Baseline X-Axis */}
+            <line x1="12%" y1="82%" x2="95%" y2="82%" stroke="#cbd5e1" strokeWidth="1.5" />
+
+            {/* Render 3 Distinct Risk Tier Bars: Low, Medium, High */}
+            {riskDistribution.tiers.map((tier, idx) => {
+              // 3 evenly distributed bar slots: centered at 28%, 54%, 80%
+              const slotCenters = [28, 54, 80];
+              const slotX = slotCenters[idx];
+              const barWidth = 14; // in %
+
+              const currentVal = distViewMetric === 'count' ? tier.count : tier.exposure;
+              const maxVal = distViewMetric === 'count' ? riskDistribution.maxCount : riskDistribution.maxExposure;
+              const heightPct = maxVal > 0 ? (currentVal / maxVal) * 68 : 0;
+              const barTopY = 82 - heightPct;
+
+              const isFilterActive = matrixRiskFilter === tier.key;
+
+              return (
+                <g 
+                  key={tier.key} 
+                  className="cursor-pointer group"
+                  onClick={() => setMatrixRiskFilter(matrixRiskFilter === tier.key ? 'All' : tier.key)}
+                >
+                  {/* Active Selection Ring / Background Column */}
+                  {isFilterActive && (
+                    <rect
+                      x={`${slotX - barWidth / 2 - 2}%`}
+                      y="12%"
+                      width={`${barWidth + 4}%`}
+                      height="72%"
+                      rx="8"
+                      fill={tier.barColor}
+                      fillOpacity="0.08"
+                      stroke={tier.barColor}
+                      strokeWidth="1.5"
+                      strokeDasharray="3 3"
+                    />
+                  )}
+
+                  {/* Main Vertical Bar */}
+                  <rect
+                    x={`${slotX - barWidth / 2}%`}
+                    y={`${barTopY}%`}
+                    width={`${barWidth}%`}
+                    height={`${Math.max(2, heightPct)}%`}
+                    rx="6"
+                    fill={tier.barColor}
+                    fillOpacity={isFilterActive ? 1 : 0.88}
+                    className="transition-all duration-300 hover:opacity-100"
+                  />
+
+                  {/* Value Tag on Top of Bar */}
+                  <text
+                    x={`${slotX}%`}
+                    y={`${Math.max(8, barTopY - 2.5)}%`}
+                    textAnchor="middle"
+                    className="text-[11px] font-bold font-mono fill-slate-900"
+                  >
+                    {distViewMetric === 'count' 
+                      ? `${tier.count} (${tier.pct.toFixed(0)}%)` 
+                      : `$${(tier.exposure / 1000).toFixed(1)}k (${tier.exposurePct.toFixed(0)}%)`}
+                  </text>
+
+                  {/* Category Label below Bar */}
+                  <text
+                    x={`${slotX}%`}
+                    y="88%"
+                    textAnchor="middle"
+                    className="text-xs font-bold fill-slate-800"
+                  >
+                    {tier.label}
+                  </text>
+
+                  {/* Score Range Subtitle below Label */}
+                  <text
+                    x={`${slotX}%`}
+                    y="93.5%"
+                    textAnchor="middle"
+                    className="text-[10px] font-mono font-medium fill-slate-500"
+                  >
+                    {tier.scoreRange}
+                  </text>
+                </g>
+              );
+            })}
+          </svg>
+        </div>
+
+        {/* 3 Detailed Category Metric Breakdown Cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-1">
+          {riskDistribution.tiers.map((tier) => {
+            const isFilterActive = matrixRiskFilter === tier.key;
+
+            return (
+              <div
+                key={`card-${tier.key}`}
+                onClick={() => setMatrixRiskFilter(matrixRiskFilter === tier.key ? 'All' : tier.key)}
+                className={`p-4 rounded-xl border transition-all cursor-pointer ${tier.lightBgClass} ${
+                  isFilterActive ? `ring-2 ring-indigo-600 ${tier.borderClass} shadow-xs` : `${tier.borderClass} hover:border-slate-400`
+                }`}
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: tier.barColor }} />
+                    <span className="font-bold text-slate-900 text-sm">{tier.label}</span>
+                  </div>
+                  <span className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded-full ${tier.badgeClass}`}>
+                    {tier.scoreRange}
+                  </span>
+                </div>
+
+                <div className="space-y-2 mt-3">
+                  <div className="flex items-baseline justify-between">
+                    <span className="text-xs text-slate-500">Cardholders:</span>
+                    <span className="text-base font-black text-slate-900 font-mono">
+                      {tier.count} <span className="text-xs text-slate-500 font-normal">({tier.pct.toFixed(1)}%)</span>
+                    </span>
+                  </div>
+
+                  <div className="flex items-baseline justify-between">
+                    <span className="text-xs text-slate-500">Total Revolving Balance:</span>
+                    <span className="text-sm font-bold text-slate-900 font-mono">
+                      ${tier.exposure.toLocaleString()}
+                    </span>
+                  </div>
+
+                  <div className="flex items-baseline justify-between pt-1 border-t border-slate-200/60 text-xs">
+                    <span className="text-slate-500">Average Default Prob (PD):</span>
+                    <span className="font-bold font-mono text-slate-800">{tier.avgPd.toFixed(1)}%</span>
+                  </div>
+
+                  <div className="flex items-baseline justify-between text-xs">
+                    <span className="text-slate-500">Average Utilization:</span>
+                    <span className="font-bold font-mono text-slate-800">{tier.avgUtil.toFixed(1)}%</span>
+                  </div>
+                </div>
+
+                <div className="mt-3 pt-2.5 border-t border-slate-200/60 text-[11px] text-slate-600 flex items-center justify-between">
+                  <span className="truncate mr-1">{tier.policy}</span>
+                  <span className="text-indigo-600 font-bold shrink-0 text-[10px]">
+                    {isFilterActive ? '✓ Active Filter' : 'Click to filter'}
+                  </span>
+                </div>
+              </div>
+            );
+          })}
         </div>
       </div>
 
@@ -1071,64 +1574,223 @@ export const SegmentWiseDashboard: React.FC<SegmentWiseDashboardProps> = ({
 
       {/* Comparative Segment Matrix Table */}
       <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-xs space-y-4">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-4">
           <div>
-            <h3 className="text-base font-bold text-slate-900">Comparative Segment Benchmark Matrix</h3>
-            <p className="text-xs text-slate-500">Side-by-side performance indicators across all credit card cohorts</p>
+            <div className="flex items-center gap-2">
+              <span className="w-2.5 h-2.5 rounded-full bg-indigo-600" />
+              <h3 className="text-base font-bold text-slate-900">Comparative Segment Benchmark Matrix</h3>
+            </div>
+            <p className="text-xs text-slate-500 mt-0.5">
+              Side-by-side empirical performance metrics across all credit card cohorts calculated directly from active cardholder accounts. Click any row to focus on that segment.
+            </p>
           </div>
-          <span className="text-xs font-mono text-slate-500">5 Segments Analyzed</span>
+
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-xs font-mono text-slate-500 bg-slate-50 border border-slate-200 px-2.5 py-1 rounded-lg">
+              {comparativeSegmentMatrix.totals.totalCount} Accounts · 5 Cohorts
+            </span>
+
+            {/* Active Filters Indicators */}
+            {matrixRiskFilter !== 'All' && (
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold bg-amber-50 text-amber-800 border border-amber-200">
+                <span>Filter: {matrixRiskFilter} Risk</span>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setMatrixRiskFilter('All');
+                  }}
+                  className="hover:text-amber-950 cursor-pointer font-bold"
+                  title="Clear risk filter"
+                >
+                  ×
+                </button>
+              </span>
+            )}
+
+            {selectedSegment !== 'All' && (
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">
+                <span>Focus: {selectedSegment}</span>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setSelectedSegment('All');
+                  }}
+                  className="hover:text-indigo-950 cursor-pointer font-bold"
+                  title="Clear segment filter"
+                >
+                  ×
+                </button>
+              </span>
+            )}
+
+            {(selectedSegment !== 'All' || matrixRiskFilter !== 'All') && (
+              <button
+                onClick={() => {
+                  setSelectedSegment('All');
+                  setMatrixRiskFilter('All');
+                }}
+                className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-lg transition-colors cursor-pointer"
+              >
+                Reset All Filters
+              </button>
+            )}
+          </div>
         </div>
 
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
             <thead>
-              <tr className="border-b border-slate-200 text-slate-500 font-semibold uppercase tracking-wider">
-                <th className="py-2.5 px-3">Segment Cohort</th>
-                <th className="py-2.5 px-3 text-right">Cardholders</th>
-                <th className="py-2.5 px-3 text-right">Share</th>
-                <th className="py-2.5 px-3 text-right">Avg Utilization</th>
-                <th className="py-2.5 px-3 text-right">Avg Balance</th>
-                <th className="py-2.5 px-3 text-right">Avg Income</th>
-                <th className="py-2.5 px-3 text-right">Default Rate</th>
-                <th className="py-2.5 px-3">Primary Underwriting Strategy</th>
+              <tr className="border-b border-slate-200 text-slate-500 font-semibold uppercase tracking-wider bg-slate-50/70">
+                <th className="py-3 px-3">Segment Cohort</th>
+                <th className="py-3 px-3 text-right">Cardholders</th>
+                <th className="py-3 px-3 text-right">Portfolio Share</th>
+                <th className="py-3 px-3 text-right">Avg Utilization</th>
+                <th className="py-3 px-3 text-right">Avg Balance</th>
+                <th className="py-3 px-3 text-right">Segment Exposure</th>
+                <th className="py-3 px-3 text-right">Avg Income</th>
+                <th className="py-3 px-3 text-right">Estimated PD</th>
+                <th className="py-3 px-3 text-right">Default Rate</th>
+                <th className="py-3 px-3 min-w-[220px]">Primary Underwriting Strategy</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {segmentsData.map((seg, idx) => {
-                const color = SEGMENT_COLORS[seg.segment || seg.name] || DEFAULT_SEGMENT_COLOR;
-                const isSelected = selectedSegment === (seg.segment || seg.name);
+              {comparativeSegmentMatrix.rows.map((seg, idx) => {
+                const color = SEGMENT_COLORS[seg.name] || DEFAULT_SEGMENT_COLOR;
+                const isSelected = selectedSegment === seg.name;
 
                 return (
                   <tr
                     key={idx}
-                    onClick={() => setSelectedSegment(seg.segment || seg.name)}
+                    onClick={() => setSelectedSegment(isSelected ? 'All' : seg.name)}
                     className={`cursor-pointer transition-colors ${
-                      isSelected ? 'bg-indigo-50/80 font-medium' : 'hover:bg-slate-50/80'
+                      isSelected
+                        ? 'bg-indigo-50/90 font-medium border-l-4 border-indigo-600'
+                        : 'hover:bg-slate-50/80'
                     }`}
                   >
-                    <td className="py-3 px-3 flex items-center gap-2">
-                      <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: color.dot }} />
-                      <div>
-                        <div className="font-bold text-slate-900">{seg.name || seg.segment}</div>
-                        <div className="text-[10px] text-slate-500">{seg.tagline}</div>
+                    <td className="py-3.5 px-3">
+                      <div className="flex items-center gap-2">
+                        <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: color.dot }} />
+                        <div>
+                          <div className="flex items-center gap-1.5">
+                            <span className="font-bold text-slate-900">{seg.name}</span>
+                            {isSelected && (
+                              <span className="text-[9px] font-mono px-1.5 py-0.2 rounded bg-indigo-600 text-white font-bold">
+                                ACTIVE
+                              </span>
+                            )}
+                          </div>
+                          <div className="text-[10px] text-slate-500 leading-tight mt-0.5">{seg.tagline}</div>
+                        </div>
                       </div>
                     </td>
-                    <td className="py-3 px-3 text-right font-mono text-slate-800">{seg.count}</td>
-                    <td className="py-3 px-3 text-right font-mono text-slate-600">{seg.percentage}%</td>
-                    <td className="py-3 px-3 text-right font-mono font-bold text-slate-900">{seg.avgUtilization}%</td>
-                    <td className="py-3 px-3 text-right font-mono text-slate-800">${seg.avgBalance?.toLocaleString()}</td>
-                    <td className="py-3 px-3 text-right font-mono text-slate-600">${seg.avgIncome?.toLocaleString()}</td>
-                    <td className="py-3 px-3 text-right font-mono font-bold text-rose-600">{seg.defaultRate}%</td>
-                    <td className="py-3 px-3 text-[11px] text-slate-600">{seg.recommendedStrategy}</td>
+
+                    {/* Cardholders Count (Reflects Filter) */}
+                    <td className="py-3.5 px-3 text-right font-mono text-slate-800">
+                      {matrixRiskFilter === 'All' ? (
+                        <span>{seg.totalCount}</span>
+                      ) : (
+                        <div>
+                          <span className="font-bold text-indigo-700">{seg.filteredCount}</span>
+                          <span className="text-[10px] text-slate-400 block font-sans">of {seg.totalCount}</span>
+                        </div>
+                      )}
+                    </td>
+
+                    {/* Portfolio Share */}
+                    <td className="py-3.5 px-3 text-right font-mono text-slate-600">
+                      {seg.sharePct.toFixed(1)}%
+                    </td>
+
+                    {/* Avg Utilization */}
+                    <td className="py-3.5 px-3 text-right font-mono font-bold">
+                      <span className={seg.avgUtil >= 60 ? 'text-rose-600' : seg.avgUtil >= 35 ? 'text-amber-600' : 'text-emerald-700'}>
+                        {seg.avgUtil.toFixed(1)}%
+                      </span>
+                    </td>
+
+                    {/* Avg Balance */}
+                    <td className="py-3.5 px-3 text-right font-mono text-slate-800">
+                      ${Math.round(seg.avgBal).toLocaleString()}
+                    </td>
+
+                    {/* Segment Exposure Total */}
+                    <td className="py-3.5 px-3 text-right font-mono font-semibold text-slate-900">
+                      ${Math.round(seg.totalExposure).toLocaleString()}
+                    </td>
+
+                    {/* Avg Income */}
+                    <td className="py-3.5 px-3 text-right font-mono text-slate-600">
+                      ${Math.round(seg.avgInc).toLocaleString()}
+                    </td>
+
+                    {/* Model Estimated Default Probability (PD) */}
+                    <td className="py-3.5 px-3 text-right font-mono font-bold text-slate-900">
+                      {seg.avgPd.toFixed(1)}%
+                    </td>
+
+                    {/* Historical Default Rate */}
+                    <td className="py-3.5 px-3 text-right font-mono">
+                      <span className={seg.defaultRate > 20 ? 'text-rose-600 font-bold' : seg.defaultRate > 5 ? 'text-amber-600 font-semibold' : 'text-emerald-700'}>
+                        {seg.defaultRate.toFixed(1)}%
+                      </span>
+                      <span className="text-[10px] text-slate-400 block font-sans">({seg.defCount} def)</span>
+                    </td>
+
+                    {/* Primary Underwriting Strategy */}
+                    <td className="py-3.5 px-3 text-[11px] text-slate-700 leading-relaxed">
+                      {seg.strategy}
+                    </td>
                   </tr>
                 );
               })}
+
+              {/* Portfolio Totals Row */}
+              <tr className="bg-slate-100/90 font-bold text-slate-900 border-t-2 border-slate-300">
+                <td className="py-3 px-3">
+                  <div className="font-bold">Portfolio Aggregate Total</div>
+                  <div className="text-[10px] text-slate-500 font-normal">Complete 200 Card Accounts Universe</div>
+                </td>
+                <td className="py-3 px-3 text-right font-mono text-slate-900">
+                  {matrixRiskFilter === 'All' ? (
+                    comparativeSegmentMatrix.totals.totalCount
+                  ) : (
+                    <div>
+                      <span className="text-indigo-700">{comparativeSegmentMatrix.totals.filteredCount}</span>
+                      <span className="text-[10px] text-slate-400 block font-normal">of 200</span>
+                    </div>
+                  )}
+                </td>
+                <td className="py-3 px-3 text-right font-mono text-slate-700">100.0%</td>
+                <td className="py-3 px-3 text-right font-mono text-slate-900">
+                  {comparativeSegmentMatrix.totals.avgUtil.toFixed(1)}%
+                </td>
+                <td className="py-3 px-3 text-right font-mono text-slate-900">
+                  ${Math.round(comparativeSegmentMatrix.totals.avgBal).toLocaleString()}
+                </td>
+                <td className="py-3 px-3 text-right font-mono text-slate-900">
+                  ${Math.round(comparativeSegmentMatrix.totals.totalExposure).toLocaleString()}
+                </td>
+                <td className="py-3 px-3 text-right font-mono text-slate-700">
+                  ${Math.round(comparativeSegmentMatrix.totals.avgInc).toLocaleString()}
+                </td>
+                <td className="py-3 px-3 text-right font-mono text-slate-900">
+                  {comparativeSegmentMatrix.totals.avgPd.toFixed(1)}%
+                </td>
+                <td className="py-3 px-3 text-right font-mono text-slate-900">
+                  {comparativeSegmentMatrix.totals.defaultRate.toFixed(1)}%
+                  <span className="text-[10px] text-slate-400 block font-normal">({comparativeSegmentMatrix.totals.defCount} def)</span>
+                </td>
+                <td className="py-3 px-3 text-[11px] text-slate-600 font-normal">
+                  {comparativeSegmentMatrix.totals.strategy}
+                </td>
+              </tr>
             </tbody>
           </table>
         </div>
       </div>
 
-      {/* Grid: Interactive Segment Policy Simulator + AI Segment Strategist */}
+      {/* Grid: Interactive Segment Policy Simulator + Executive Strategy Memo */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Left Column (6 cols): What-If Policy Rebalancing Simulator */}
         <div className="lg:col-span-6 bg-white border border-slate-200 rounded-2xl p-6 shadow-xs space-y-5">
@@ -1136,10 +1798,10 @@ export const SegmentWiseDashboard: React.FC<SegmentWiseDashboardProps> = ({
             <div>
               <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
                 <Sliders className="w-4 h-4 text-indigo-600" />
-                Segment Policy & Rebalancing Simulator
+                Capital & Loss Mitigation Policy Simulator
               </h3>
               <p className="text-xs text-slate-500">
-                Simulate underwriting policy adjustments for <span className="font-semibold text-slate-800">[{selectedSegment}]</span>
+                Simulate capital preservation and default reduction on <span className="font-semibold text-slate-800">[{selectedSegment}]</span>
               </p>
             </div>
             <button
@@ -1148,9 +1810,9 @@ export const SegmentWiseDashboard: React.FC<SegmentWiseDashboardProps> = ({
                 setMinPaymentPct(2.5);
                 setRestrictCashAdvance(false);
               }}
-              className="text-[11px] text-slate-500 hover:text-slate-800 cursor-pointer"
+              className="text-[11px] text-slate-500 hover:text-slate-800 cursor-pointer font-medium"
             >
-              Reset
+              Reset Controls
             </button>
           </div>
 
@@ -1158,7 +1820,7 @@ export const SegmentWiseDashboard: React.FC<SegmentWiseDashboardProps> = ({
             {/* Slider 1: Credit Limit Adjustment */}
             <div className="space-y-1.5">
               <div className="flex items-center justify-between text-xs">
-                <span className="font-semibold text-slate-700">Credit Limit Curtailment / Expansion:</span>
+                <span className="font-semibold text-slate-700">Credit Line Curtailment / Expansion:</span>
                 <span className={`font-mono font-bold ${limitAdjustmentPct < 0 ? 'text-rose-600' : limitAdjustmentPct > 0 ? 'text-emerald-600' : 'text-slate-800'}`}>
                   {limitAdjustmentPct > 0 ? `+${limitAdjustmentPct}%` : `${limitAdjustmentPct}%`}
                 </span>
@@ -1182,7 +1844,7 @@ export const SegmentWiseDashboard: React.FC<SegmentWiseDashboardProps> = ({
             {/* Slider 2: Minimum Payment Requirement */}
             <div className="space-y-1.5">
               <div className="flex items-center justify-between text-xs">
-                <span className="font-semibold text-slate-700">Minimum Payment Ratio:</span>
+                <span className="font-semibold text-slate-700">Minimum Monthly Due Requirement:</span>
                 <span className="font-mono font-bold text-slate-900">{minPaymentPct.toFixed(1)}% of balance</span>
               </div>
               <input
@@ -1204,8 +1866,8 @@ export const SegmentWiseDashboard: React.FC<SegmentWiseDashboardProps> = ({
             {/* Toggle 3: Restrict Cash Advance */}
             <div className="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-200">
               <div>
-                <div className="text-xs font-semibold text-slate-800">Restrict Cash Advance Draws</div>
-                <div className="text-[11px] text-slate-500">Block ATM draws on elevated utilization accounts</div>
+                <div className="text-xs font-semibold text-slate-800">Restrict Cash Advance Access</div>
+                <div className="text-[11px] text-slate-500">Cap ATM liquidity draws on elevated utilization accounts</div>
               </div>
               <input
                 type="checkbox"
@@ -1222,102 +1884,97 @@ export const SegmentWiseDashboard: React.FC<SegmentWiseDashboardProps> = ({
               <span className="text-[10px] font-bold uppercase tracking-wider text-indigo-900 block">
                 Estimated Capital Protected
               </span>
-              <span className="text-2xl font-black text-indigo-900">
+              <span className="text-2xl font-black text-indigo-900 font-mono">
                 ${Math.round(simulatedImpact.capitalSaved).toLocaleString()}
               </span>
-              <span className="text-[10px] text-indigo-700 block mt-0.5">Across {segmentStats.totalCount} accounts</span>
+              <span className="text-[10px] text-indigo-700 block mt-0.5 font-sans">Across {segmentStats.totalCount} active accounts</span>
             </div>
             <div>
               <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-900 block">
                 Default Rate Improvement
               </span>
-              <span className="text-2xl font-black text-emerald-800">
+              <span className="text-2xl font-black text-emerald-800 font-mono">
                 -{simulatedImpact.defaultRateDrop.toFixed(1)}%
               </span>
-              <span className="text-[10px] text-emerald-700 block mt-0.5">Reduced risk delinquency</span>
+              <span className="text-[10px] text-emerald-700 block mt-0.5 font-sans">Projected delinquency drop</span>
             </div>
           </div>
         </div>
 
-        {/* Right Column (6 cols): AI Segment Strategist (Gemini) */}
-        <div className="lg:col-span-6 bg-gradient-to-br from-indigo-900 via-slate-900 to-slate-950 text-white rounded-2xl p-6 shadow-md border border-indigo-800/60 space-y-5">
-          <div className="flex items-center justify-between border-b border-indigo-700/50 pb-4">
-            <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-xl bg-indigo-600/80 flex items-center justify-center text-white shadow-xs">
-                <Sparkles className="w-4 h-4" />
-              </div>
-              <div>
-                <h3 className="text-sm font-bold text-white tracking-wide">AI Segment Strategist</h3>
-                <p className="text-[11px] text-indigo-300">Gemini Portfolio Diagnostic & Policy Advisor</p>
-              </div>
+        {/* Right Column (6 cols): Executive Risk Committee Strategist */}
+        <div className="lg:col-span-6 bg-[#14213d] text-white rounded-2xl p-6 shadow-sm border border-slate-700/80 space-y-4">
+          <div className="flex items-center justify-between border-b border-slate-700 pb-3">
+            <div>
+              <h3 className="text-sm font-bold text-white tracking-wide">Executive Underwriting &amp; Strategy Memo</h3>
+              <p className="text-[11px] text-slate-300">Live portfolio diagnostic and supervisory policy recommendations</p>
             </div>
-            <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-400/30">
-              Active: {selectedSegment}
+            <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-indigo-950 text-indigo-300 border border-indigo-700/60 font-semibold">
+              Cohort: {selectedSegment}
             </span>
           </div>
 
-          {/* Quick AI Prompts */}
-          <div className="space-y-2">
-            <span className="text-[11px] font-semibold text-indigo-300 uppercase tracking-wider block">
-              Quick Segment Inquiries:
+          {/* Executive Inquiries */}
+          <div className="space-y-1.5">
+            <span className="text-[11px] font-semibold text-slate-300 uppercase tracking-wider block">
+              Generate Formal Advisory:
             </span>
-            <div className="flex flex-wrap gap-1.5">
+            <div className="flex flex-wrap gap-2">
               <button
                 onClick={() => handleAskSegmentAi(`Perform an executive portfolio risk audit for the [${selectedSegment}] cohort. Highlight default threats and recommended credit line actions.`)}
                 disabled={aiLoading}
-                className="text-[11px] px-2.5 py-1.5 rounded-lg bg-indigo-800/50 hover:bg-indigo-700 text-indigo-200 border border-indigo-600/40 transition-colors cursor-pointer text-left"
+                className="text-[11px] px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition-colors cursor-pointer text-left"
               >
-                ⚡ Segment Risk Audit
+                Executive Risk Audit
               </button>
               <button
                 onClick={() => handleAskSegmentAi(`Simulate a 200 bps macroeconomic rate hike on the [${selectedSegment}] cohort. What will happen to delinquency and revolving debt burden?`)}
                 disabled={aiLoading}
-                className="text-[11px] px-2.5 py-1.5 rounded-lg bg-indigo-800/50 hover:bg-indigo-700 text-indigo-200 border border-indigo-600/40 transition-colors cursor-pointer text-left"
+                className="text-[11px] px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition-colors cursor-pointer text-left"
               >
-                📈 Rate Hike Stress Test
+                Rate Hike Stress Test
               </button>
               <button
                 onClick={() => handleAskSegmentAi(`Draft an Executive Credit Committee memo regarding policy rebalancing for the [${selectedSegment}] segment.`)}
                 disabled={aiLoading}
-                className="text-[11px] px-2.5 py-1.5 rounded-lg bg-indigo-800/50 hover:bg-indigo-700 text-indigo-200 border border-indigo-600/40 transition-colors cursor-pointer text-left"
+                className="text-[11px] px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition-colors cursor-pointer text-left"
               >
-                📝 Draft Committee Memo
+                Draft Committee Memo
               </button>
             </div>
           </div>
 
-          {/* Interactive Input */}
+          {/* Interactive Inquiry Box */}
           <div className="relative">
             <input
               type="text"
-              placeholder={`Ask Gemini about ${selectedSegment} segment dynamics...`}
+              placeholder={`Ask policy advisory regarding ${selectedSegment}...`}
               value={aiQuery}
               onChange={(e) => setAiQuery(e.target.value)}
               onKeyDown={(e) => {
                 if (e.key === 'Enter') handleAskSegmentAi();
               }}
-              className="w-full pl-3 pr-10 py-2.5 bg-slate-900/90 border border-indigo-500/50 rounded-xl text-xs text-white placeholder-indigo-300/60 focus:outline-none focus:ring-2 focus:ring-indigo-400"
+              className="w-full pl-3 pr-10 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-xs text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 font-sans"
             />
             <button
               onClick={() => handleAskSegmentAi()}
               disabled={aiLoading || !aiQuery.trim()}
-              className="absolute right-2 top-2 p-1 text-indigo-300 hover:text-white disabled:opacity-40 cursor-pointer"
+              className="absolute right-2 top-2 p-1 text-slate-400 hover:text-white disabled:opacity-40 cursor-pointer"
             >
               {aiLoading ? <RefreshCw className="w-4 h-4 animate-spin text-indigo-400" /> : <Send className="w-4 h-4" />}
             </button>
           </div>
 
-          {/* AI Output Card */}
+          {/* Output Card */}
           {aiResponse && (
-            <div className="p-4 rounded-xl bg-slate-900/90 border border-indigo-500/40 space-y-3 text-xs">
+            <div className="p-4 rounded-xl bg-slate-900/90 border border-slate-700 space-y-3 text-xs animate-in fade-in duration-200">
               <div>
                 <div className="flex items-center justify-between mb-1.5">
                   <span className="font-bold text-indigo-300 uppercase tracking-wider text-[10px]">
-                    Executive Strategic Brief
+                    Supervisory Strategic Memorandum
                   </span>
                   <button
                     onClick={() => handleCopy(aiResponse.answer, 'memo')}
-                    className="text-[10px] text-indigo-400 hover:text-white flex items-center gap-1 cursor-pointer"
+                    className="text-[10px] text-slate-400 hover:text-white flex items-center gap-1 cursor-pointer"
                   >
                     <Copy className="w-3 h-3" />
                     {copiedType === 'memo' ? 'Copied' : 'Copy'}
@@ -1329,9 +1986,9 @@ export const SegmentWiseDashboard: React.FC<SegmentWiseDashboardProps> = ({
               </div>
 
               {aiResponse.keyFactors && aiResponse.keyFactors.length > 0 && (
-                <div className="border-t border-indigo-800/60 pt-2.5">
-                  <span className="text-[10px] font-bold text-indigo-300 uppercase tracking-wider block mb-1">
-                    Portfolio Drivers
+                <div className="border-t border-slate-800 pt-2.5">
+                  <span className="text-[10px] font-bold text-slate-300 uppercase tracking-wider block mb-1">
+                    Observed Portfolio Drivers
                   </span>
                   <ul className="space-y-1">
                     {aiResponse.keyFactors.map((kf: string, i: number) => (
@@ -1345,9 +2002,9 @@ export const SegmentWiseDashboard: React.FC<SegmentWiseDashboardProps> = ({
               )}
 
               {aiResponse.recommendedActions && aiResponse.recommendedActions.length > 0 && (
-                <div className="border-t border-indigo-800/60 pt-2.5">
-                  <span className="text-[10px] font-bold text-indigo-300 uppercase tracking-wider block mb-1">
-                    Strategic Recommendations
+                <div className="border-t border-slate-800 pt-2.5">
+                  <span className="text-[10px] font-bold text-slate-300 uppercase tracking-wider block mb-1">
+                    Recommended Credit Governance Actions
                   </span>
                   <ul className="space-y-1">
                     {aiResponse.recommendedActions.map((rec: string, i: number) => (

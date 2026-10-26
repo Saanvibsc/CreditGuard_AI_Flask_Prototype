@@ -209,13 +209,13 @@ export const EarlyWarningAlerts: React.FC<EarlyWarningAlertsProps> = ({
     <div className="max-w-[1400px] mx-auto pb-16 space-y-8 font-sans">
       {/* Top Banner / Editorial Header */}
       <header className="flex flex-col md:flex-row md:items-end justify-between gap-6 pb-2 border-b border-slate-200/80">
-        <div className="border-l-4 border-[#2563eb] pl-5 sm:pl-7">
+        <div className="border-l-4 border-[#BA5641] pl-5 sm:pl-7">
           <div className="flex items-center gap-2 mb-1.5">
-            <span className="text-[10px] font-mono uppercase tracking-widest text-[#2563eb] font-bold">
+            <span className="text-[10px] font-mono uppercase tracking-widest text-[#BA5641] font-bold">
               Surveillance Watchlist
             </span>
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-blue-50 text-[#2563eb] border border-blue-200">
-              <Sparkles className="w-2.5 h-2.5" />
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-[#FAF7F2] text-[#8A3A28] border border-[#EBE6DC]">
+              <Sparkles className="w-2.5 h-2.5 text-[#BA5641]" />
               Gemini AI Powered
             </span>
           </div>
@@ -227,13 +227,13 @@ export const EarlyWarningAlerts: React.FC<EarlyWarningAlertsProps> = ({
           </p>
         </div>
 
-        {/* Counter Summary + AI Action */}
+        {/* Counter Summary + AI Action (Warm Brown Button) */}
         <div className="flex flex-wrap items-center gap-4 text-xs">
           <button
             onClick={handleOpenBatchAi}
-            className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-gradient-to-r from-[#2563eb] to-[#4338ca] text-white font-medium shadow-sm hover:shadow transition-all cursor-pointer"
+            className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-gradient-to-r from-[#BA5641] to-[#8A3A28] text-white font-medium shadow-sm hover:shadow transition-all cursor-pointer"
           >
-            <Sparkles className="w-3.5 h-3.5 text-amber-300 animate-pulse" />
+            <Sparkles className="w-3.5 h-3.5 text-amber-200 animate-pulse" />
             <span>AI Radar &amp; Batch Triage</span>
           </button>
 
@@ -350,7 +350,7 @@ export const EarlyWarningAlerts: React.FC<EarlyWarningAlertsProps> = ({
 
                       <span className={`text-[10px] font-mono px-2 py-0.5 rounded-full ${
                         alert.status === 'New'
-                          ? 'bg-blue-50 text-blue-700 font-semibold'
+                          ? 'bg-[#FAF7F2] text-[#8A3A28] border border-[#EBE6DC] font-semibold'
                           : alert.status === 'Under Review'
                           ? 'bg-amber-50 text-amber-700 font-semibold'
                           : 'bg-emerald-50 text-emerald-700 font-semibold'
@@ -390,13 +390,13 @@ export const EarlyWarningAlerts: React.FC<EarlyWarningAlertsProps> = ({
                     )}
 
                     <div className="flex items-center gap-2 justify-end flex-wrap">
-                      {/* AI Triage Button */}
+                      {/* AI Triage Button (Warm Brown) */}
                       <button
                         onClick={() => handleTriggerAiTriage(alert)}
                         className={`text-xs px-3 py-1.5 rounded-xl font-medium flex items-center gap-1.5 transition-all cursor-pointer ${
                           isAiExpanded
-                            ? 'bg-[#2563eb] text-white shadow-xs'
-                            : 'bg-blue-50 text-[#2563eb] hover:bg-blue-100 border border-blue-200'
+                            ? 'bg-[#BA5641] text-white shadow-xs'
+                            : 'bg-[#FAF7F2] text-[#8A3A28] hover:bg-[#F5EBE6] border border-[#EBE6DC]'
                         }`}
                       >
                         <Sparkles className={`w-3.5 h-3.5 ${isAiLoading ? 'animate-spin' : 'text-amber-500'}`} />
@@ -438,7 +438,7 @@ export const EarlyWarningAlerts: React.FC<EarlyWarningAlertsProps> = ({
                           onSelectCustomer(alert.customerId);
                           onNavigate('assessment');
                         }}
-                        className="text-xs px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-[#2563eb] text-white transition-colors flex items-center gap-1 cursor-pointer"
+                        className="text-xs px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-[#BA5641] text-white transition-colors flex items-center gap-1 cursor-pointer"
                       >
                         <span>Profile</span>
                         <ArrowRight className="w-3 h-3" />
@@ -509,7 +509,7 @@ export const EarlyWarningAlerts: React.FC<EarlyWarningAlertsProps> = ({
                           <ul className="space-y-1.5 text-slate-700 pl-1">
                             {aiData.workoutStrategy.map((step, idx) => (
                               <li key={idx} className="flex items-start gap-2">
-                                <span className="w-4 h-4 rounded-full bg-blue-100 text-[#2563eb] font-mono text-[10px] flex items-center justify-center shrink-0 mt-0.5">
+                                <span className="w-4 h-4 rounded-full bg-[#EED2C5] text-[#943825] font-mono text-[10px] flex items-center justify-center shrink-0 mt-0.5">
                                   {idx + 1}
                                 </span>
                                 <span>{step}</span>
@@ -521,15 +521,15 @@ export const EarlyWarningAlerts: React.FC<EarlyWarningAlertsProps> = ({
                         {/* Customer Notice Drafts */}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
                           {/* SMS Notice */}
-                          <div className="bg-white p-3.5 rounded-xl border border-blue-100 shadow-2xs space-y-2">
+                          <div className="bg-white p-3.5 rounded-xl border border-[#EBE6DC] shadow-2xs space-y-2">
                             <div className="flex items-center justify-between">
                               <span className="font-mono text-[10px] uppercase font-bold text-slate-800 flex items-center gap-1">
-                                <MessageSquare className="w-3 h-3 text-[#2563eb]" />
+                                <MessageSquare className="w-3 h-3 text-[#BA5641]" />
                                 Cardholder SMS Notice
                               </span>
                               <button
                                 onClick={() => handleCopyText(aiData.customerNoticeDraft.sms, 'sms')}
-                                className="text-[10px] font-mono text-[#2563eb] hover:underline flex items-center gap-1 cursor-pointer"
+                                className="text-[10px] font-mono text-[#BA5641] hover:underline flex items-center gap-1 cursor-pointer"
                               >
                                 <Copy className="w-2.5 h-2.5" />
                                 {copiedType === 'sms' ? 'Copied!' : 'Copy'}
@@ -541,15 +541,15 @@ export const EarlyWarningAlerts: React.FC<EarlyWarningAlertsProps> = ({
                           </div>
 
                           {/* Email Notice */}
-                          <div className="bg-white p-3.5 rounded-xl border border-blue-100 shadow-2xs space-y-2">
+                          <div className="bg-white p-3.5 rounded-xl border border-[#EBE6DC] shadow-2xs space-y-2">
                             <div className="flex items-center justify-between">
                               <span className="font-mono text-[10px] uppercase font-bold text-slate-800 flex items-center gap-1">
-                                <Mail className="w-3 h-3 text-[#2563eb]" />
+                                <Mail className="w-3 h-3 text-[#BA5641]" />
                                 Formal Email Notice
                               </span>
                               <button
                                 onClick={() => handleCopyText(`${aiData.customerNoticeDraft.emailSubject}\n\n${aiData.customerNoticeDraft.emailBody}`, 'email')}
-                                className="text-[10px] font-mono text-[#2563eb] hover:underline flex items-center gap-1 cursor-pointer"
+                                className="text-[10px] font-mono text-[#BA5641] hover:underline flex items-center gap-1 cursor-pointer"
                               >
                                 <Copy className="w-2.5 h-2.5" />
                                 {copiedType === 'email' ? 'Copied!' : 'Copy'}
@@ -567,10 +567,10 @@ export const EarlyWarningAlerts: React.FC<EarlyWarningAlertsProps> = ({
                         </div>
 
                         {/* Interactive Gemini Risk Query for this Cardholder */}
-                        <div className="bg-white p-3.5 rounded-xl border border-blue-100 shadow-2xs space-y-2.5">
+                        <div className="bg-white p-3.5 rounded-xl border border-[#EBE6DC] shadow-2xs space-y-2.5">
                           <div className="flex items-center justify-between">
                             <span className="font-mono text-[10px] uppercase font-bold text-slate-800 flex items-center gap-1.5">
-                              <Bot className="w-3.5 h-3.5 text-[#2563eb]" />
+                              <Bot className="w-3.5 h-3.5 text-[#BA5641]" />
                               Ask Gemini AI Risk Assistant About This Cardholder
                             </span>
                             <span className="text-[10px] font-mono text-slate-400">Cardholder: {alert.customerId}</span>
@@ -589,7 +589,7 @@ export const EarlyWarningAlerts: React.FC<EarlyWarningAlertsProps> = ({
                                   setCustomQuestionByAlert((prev) => ({ ...prev, [alert.id]: pill }));
                                   void handleAskCustomAi(alert, pill);
                                 }}
-                                className="text-[10px] px-2 py-0.5 rounded-md bg-blue-50 text-[#2563eb] hover:bg-blue-100 transition-colors border border-blue-100 cursor-pointer"
+                                className="text-[10px] px-2 py-0.5 rounded-md bg-[#FAF7F2] text-[#8A3A28] hover:bg-[#F5EBE6] transition-colors border border-[#EBE6DC] cursor-pointer"
                               >
                                 {pill}
                               </button>
@@ -606,12 +606,12 @@ export const EarlyWarningAlerts: React.FC<EarlyWarningAlertsProps> = ({
                               onKeyDown={(e) => {
                                 if (e.key === 'Enter') void handleAskCustomAi(alert);
                               }}
-                              className="flex-1 bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs text-slate-800 outline-none focus:border-[#2563eb]"
+                              className="flex-1 bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs text-slate-800 outline-none focus:border-[#BA5641]"
                             />
                             <button
                               onClick={() => void handleAskCustomAi(alert)}
                               disabled={askingAiAlertId === alert.id}
-                              className="px-3 py-1.5 bg-[#2563eb] text-white rounded-lg text-xs font-semibold flex items-center gap-1 hover:bg-[#1d4ed8] transition-colors disabled:opacity-50 cursor-pointer"
+                              className="px-3 py-1.5 bg-[#BA5641] text-white rounded-lg text-xs font-semibold flex items-center gap-1 hover:bg-[#A54935] transition-colors disabled:opacity-50 cursor-pointer shadow-2xs"
                             >
                               {askingAiAlertId === alert.id ? (
                                 <RefreshCw className="w-3 h-3 animate-spin" />
@@ -624,12 +624,12 @@ export const EarlyWarningAlerts: React.FC<EarlyWarningAlertsProps> = ({
 
                           {/* Custom Answer Display */}
                           {customAnswerByAlert[alert.id] && (
-                            <div className="p-3 bg-blue-50/60 rounded-xl border border-blue-100 text-xs space-y-1.5 animate-in fade-in duration-200">
+                            <div className="p-3 bg-[#FAF7F2] rounded-xl border border-[#EBE6DC] text-xs space-y-1.5 animate-in fade-in duration-200">
                               <p className="text-slate-800 leading-relaxed font-sans">
                                 {customAnswerByAlert[alert.id].answer}
                               </p>
                               {customAnswerByAlert[alert.id].recommendedAction && (
-                                <div className="text-[11px] text-[#2563eb] font-medium pt-1 border-t border-blue-200/50">
+                                <div className="text-[11px] text-[#BA5641] font-medium pt-1 border-t border-[#E5DFD4]">
                                   <strong>Intervention:</strong> {customAnswerByAlert[alert.id].recommendedAction}
                                 </div>
                               )}
@@ -638,14 +638,14 @@ export const EarlyWarningAlerts: React.FC<EarlyWarningAlertsProps> = ({
                         </div>
 
                         {/* Quick Apply and Dispatch Controls */}
-                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-1 border-t border-blue-100/60">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-1 border-t border-[#F0EBE1]">
                           <div className="flex items-center gap-2">
                             <button
                               onClick={() => handleSimulateDispatch(alert.id)}
                               disabled={dispatchedAlertId === alert.id}
-                              className="px-3.5 py-2 border border-blue-200 bg-white text-[#2563eb] hover:bg-blue-50 rounded-xl text-xs font-medium flex items-center gap-1.5 transition-colors cursor-pointer shadow-2xs"
+                              className="px-3.5 py-2 border border-[#E5DFD4] bg-white text-[#8A3A28] hover:bg-[#FAF7F2] rounded-xl text-xs font-medium flex items-center gap-1.5 transition-colors cursor-pointer shadow-2xs"
                             >
-                              <Send className="w-3 h-3" />
+                              <Send className="w-3 h-3 text-[#BA5641]" />
                               <span>{dispatchedAlertId === alert.id ? '✓ Dispatched to Gateway' : 'Simulate Customer Notice Dispatch'}</span>
                             </button>
                             {dispatchedAlertId === alert.id && (
@@ -660,7 +660,7 @@ export const EarlyWarningAlerts: React.FC<EarlyWarningAlertsProps> = ({
                               handleStatusChange(alert.id, 'Under Review');
                               setExpandedAiAlertId(null);
                             }}
-                            className="px-4 py-2 bg-[#2563eb] hover:bg-[#1d4ed8] text-white rounded-xl text-xs font-semibold flex items-center gap-1.5 shadow-xs transition-colors cursor-pointer self-end sm:self-auto"
+                            className="px-4 py-2 bg-[#BA5641] hover:bg-[#A54935] text-white rounded-xl text-xs font-semibold flex items-center gap-1.5 shadow-xs transition-colors cursor-pointer self-end sm:self-auto"
                           >
                             <Check className="w-3.5 h-3.5" />
                             <span>Adopt AI Mitigation &amp; Mark Under Review</span>
@@ -685,10 +685,10 @@ export const EarlyWarningAlerts: React.FC<EarlyWarningAlertsProps> = ({
         <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="bg-white w-full max-w-3xl rounded-3xl border border-slate-200 shadow-xl overflow-hidden max-h-[90vh] flex flex-col animate-in fade-in zoom-in-95 duration-200">
             {/* Modal Header */}
-            <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-gradient-to-r from-blue-50 to-indigo-50/50">
+            <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-gradient-to-r from-[#FAF7F2] to-[#F5EBE6]">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-2xl bg-[#2563eb] text-white flex items-center justify-center shadow-sm">
-                  <Sparkles className="w-5 h-5 text-amber-300" />
+                <div className="w-10 h-10 rounded-2xl bg-[#BA5641] text-white flex items-center justify-center shadow-sm">
+                  <Sparkles className="w-5 h-5 text-amber-200" />
                 </div>
                 <div>
                   <h2 className="font-serif font-bold text-xl text-slate-900">
@@ -712,14 +712,14 @@ export const EarlyWarningAlerts: React.FC<EarlyWarningAlertsProps> = ({
             <div className="p-6 overflow-y-auto space-y-6 text-xs flex-1">
               {batchAiLoading ? (
                 <div className="py-16 flex flex-col items-center justify-center gap-3 text-slate-500">
-                  <Bot className="w-8 h-8 text-[#2563eb] animate-bounce" />
+                  <Bot className="w-8 h-8 text-[#BA5641] animate-bounce" />
                   <span className="font-mono text-xs">Analyzing 200 cardholder accounts and clustering surveillance alerts...</span>
                 </div>
               ) : batchAiData ? (
                 <div className="space-y-6">
                   {/* Executive Summary */}
-                  <div className="p-4 rounded-2xl bg-blue-50/60 border border-blue-100 space-y-1.5">
-                    <span className="text-[10px] uppercase font-mono font-bold text-[#2563eb] block">
+                  <div className="p-4 rounded-2xl bg-[#FAF7F2] border border-[#EBE6DC] space-y-1.5">
+                    <span className="text-[10px] uppercase font-mono font-bold text-[#BA5641] block">
                       Executive Portfolio Surveillance Synthesis
                     </span>
                     <p className="text-sm text-slate-800 leading-relaxed font-sans">
@@ -799,23 +799,23 @@ export const EarlyWarningAlerts: React.FC<EarlyWarningAlertsProps> = ({
                   }}
                   className="px-3 py-1.5 border border-slate-200 bg-white hover:bg-slate-100 text-slate-700 rounded-xl text-xs font-medium flex items-center gap-1.5 transition-colors cursor-pointer"
                 >
-                  <Copy className="w-3.5 h-3.5 text-[#2563eb]" />
+                  <Copy className="w-3.5 h-3.5 text-[#BA5641]" />
                   <span>{copiedType === 'memo' ? '✓ Memo Copied to Clipboard!' : 'Copy Executive Committee Memo'}</span>
                 </button>
 
                 <button
                   onClick={handleBatchDispatch}
                   disabled={batchDispatched}
-                  className="px-3.5 py-1.5 bg-[#2563eb] hover:bg-[#1d4ed8] text-white rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs disabled:opacity-50"
+                  className="px-3.5 py-1.5 bg-[#BA5641] hover:bg-[#A54935] text-white rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs disabled:opacity-50"
                 >
-                  <Zap className="w-3.5 h-3.5 text-amber-300" />
+                  <Zap className="w-3.5 h-3.5 text-amber-200" />
                   <span>{batchDispatched ? '✓ Top Accounts Queued for Review!' : '1-Click Batch Underwriting Queue'}</span>
                 </button>
               </div>
 
               <button
                 onClick={() => setShowBatchAiModal(false)}
-                className="px-4 py-2 bg-slate-900 hover:bg-[#2563eb] text-white rounded-xl text-xs font-semibold transition-colors cursor-pointer"
+                className="px-4 py-2 bg-slate-900 hover:bg-[#BA5641] text-white rounded-xl text-xs font-semibold transition-colors cursor-pointer"
               >
                 Close Radar
               </button>

@@ -1,354 +1,340 @@
+/**
+ * @license
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 import React, { useState } from 'react';
 import { RiskTier } from '../../types';
 
-interface RiskDistributionChartProps {
-  lowCount: number;
-  mediumCount: number;
-  highCount: number;
-  total: number;
+interface PortfolioDonutChartProps {
+  lowCount?: number;
+  medCount?: number;
+  highCount?: number;
+  total?: number;
+  selectedTier?: RiskTier | null;
+  onSelectTier?: (tier: RiskTier | null) => void;
 }
 
-export const RiskDistributionChart: React.FC<RiskDistributionChartProps> = ({
-  lowCount,
-  mediumCount,
-  highCount,
-  total,
+export const PortfolioDonutChart: React.FC<PortfolioDonutChartProps> = ({
+  lowCount = 132,
+  medCount = 40,
+  highCount = 28,
+  total = 200,
+  selectedTier = null,
+  onSelectTier,
 }) => {
-  const [hoveredTier, setHoveredTier] = useState<RiskTier | null>(null);
+  const [hovered, setHovered] = useState<string | null>(null);
 
   const lowPct = total > 0 ? (lowCount / total) * 100 : 0;
-  const medPct = total > 0 ? (mediumCount / total) * 100 : 0;
+  const medPct = total > 0 ? (medCount / total) * 100 : 0;
   const highPct = total > 0 ? (highCount / total) * 100 : 0;
 
-  // Donut chart geometry
-  const radius = 64;
+  // SVG Geometry
+  const size = 150;
+  const strokeWidth = 22;
+  const radius = (size - strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;
 
-  const lowStroke = (lowPct / 100) * circumference;
-  const medStroke = (medPct / 100) * circumference;
-  const highStroke = (highPct / 100) * circumference;
+  // Stroke dashes
+  const lowDash = (lowPct / 100) * circumference;
+  const medDash = (medPct / 100) * circumference;
+  const highDash = (highPct / 100) * circumference;
 
+  // Offsets (starting from top, rotate -90)
   const lowOffset = 0;
-  const medOffset = -lowStroke;
-  const highOffset = -(lowStroke + medStroke);
+  const medOffset = -lowDash;
+  const highOffset = -(lowDash + medDash);
+
+  const handleTierClick = (tier: RiskTier) => {
+    if (!onSelectTier) return;
+    if (selectedTier === tier) {
+      onSelectTier(null); // toggle off
+    } else {
+      onSelectTier(tier);
+    }
+  };
+
+  const activeFocus = hovered || selectedTier;
 
   return (
-    <div className="flex flex-col sm:flex-row items-center gap-6 justify-between">
-      {/* SVG Donut */}
-      <div className="relative w-44 h-44 shrink-0 flex items-center justify-center">
-        <svg className="w-full h-full -rotate-90" viewBox="0 0 160 160">
+    <div className="flex flex-col sm:flex-row items-center justify-between gap-4 w-full">
+      {/* Donut Circle */}
+      <div className="relative w-36 h-36 shrink-0 flex items-center justify-center">
+        <svg className="w-full h-full -rotate-90" viewBox={`0 0 ${size} ${size}`}>
+          {/* Base background track */}
           <circle
-            cx="80"
-            cy="80"
+            cx={size / 2}
+            cy={size / 2}
             r={radius}
             fill="transparent"
-            stroke="#e5e7eb"
-            strokeWidth="12"
+            stroke="#EFECE6"
+            strokeWidth={strokeWidth}
           />
-          {/* Low Risk: Indigo (#4338ca) */}
+          {/* Low Risk Arc (Sage Green #6DA884) */}
           <circle
-            cx="80"
-            cy="80"
+            cx={size / 2}
+            cy={size / 2}
             r={radius}
             fill="transparent"
-            stroke="#4338ca"
-            strokeWidth={hoveredTier === 'Low' ? '16' : '12'}
-            strokeDasharray={`${lowStroke} ${circumference}`}
+            stroke="#6DA884"
+            strokeWidth={activeFocus === 'Low' ? strokeWidth + 4 : strokeWidth}
+            strokeDasharray={`${lowDash} ${circumference}`}
             strokeDashoffset={lowOffset}
             className="transition-all duration-200 cursor-pointer"
-            onMouseEnter={() => setHoveredTier('Low')}
-            onMouseLeave={() => setHoveredTier(null)}
+            onMouseEnter={() => setHovered('Low')}
+            onMouseLeave={() => setHovered(null)}
+            onClick={() => handleTierClick('Low')}
           />
-          {/* Medium Risk: Amber (#b45309) */}
+          {/* Medium Risk Arc (Golden Amber #DF9E47) */}
           <circle
-            cx="80"
-            cy="80"
+            cx={size / 2}
+            cy={size / 2}
             r={radius}
             fill="transparent"
-            stroke="#b45309"
-            strokeWidth={hoveredTier === 'Medium' ? '16' : '12'}
-            strokeDasharray={`${medStroke} ${circumference}`}
+            stroke="#DF9E47"
+            strokeWidth={activeFocus === 'Medium' ? strokeWidth + 4 : strokeWidth}
+            strokeDasharray={`${medDash} ${circumference}`}
             strokeDashoffset={medOffset}
             className="transition-all duration-200 cursor-pointer"
-            onMouseEnter={() => setHoveredTier('Medium')}
-            onMouseLeave={() => setHoveredTier(null)}
+            onMouseEnter={() => setHovered('Medium')}
+            onMouseLeave={() => setHovered(null)}
+            onClick={() => handleTierClick('Medium')}
           />
-          {/* High Risk: Crimson (#be123c) */}
+          {/* High Risk Arc (Terracotta #BA5641) */}
           <circle
-            cx="80"
-            cy="80"
+            cx={size / 2}
+            cy={size / 2}
             r={radius}
             fill="transparent"
-            stroke="#be123c"
-            strokeWidth={hoveredTier === 'High' ? '16' : '12'}
-            strokeDasharray={`${highStroke} ${circumference}`}
+            stroke="#BA5641"
+            strokeWidth={activeFocus === 'High' ? strokeWidth + 4 : strokeWidth}
+            strokeDasharray={`${highDash} ${circumference}`}
             strokeDashoffset={highOffset}
             className="transition-all duration-200 cursor-pointer"
-            onMouseEnter={() => setHoveredTier('High')}
-            onMouseLeave={() => setHoveredTier(null)}
+            onMouseEnter={() => setHovered('High')}
+            onMouseLeave={() => setHovered(null)}
+            onClick={() => handleTierClick('High')}
           />
         </svg>
 
-        {/* Center label */}
-        <div className="absolute inset-0 flex flex-col items-center justify-center text-center pointer-events-none">
-          <span className="meta text-[9px]">
-            {hoveredTier ? `${hoveredTier} Risk` : 'Total Index'}
+        {/* Center Text (interactive) */}
+        <div
+          onClick={() => onSelectTier && onSelectTier(null)}
+          className="absolute inset-0 flex flex-col items-center justify-center text-center cursor-pointer select-none group"
+          title="Click to reset tier filter"
+        >
+          <span className="text-2xl font-bold font-sans text-[#1A1816] tracking-tight leading-none group-hover:text-[#BA5641] transition-colors">
+            {activeFocus === 'Low'
+              ? lowCount
+              : activeFocus === 'Medium'
+              ? medCount
+              : activeFocus === 'High'
+              ? highCount
+              : total}
           </span>
-          <span className="text-2xl font-serif font-bold text-[#1a1a1a]">
-            {hoveredTier === 'Low'
-              ? `${lowCount}`
-              : hoveredTier === 'Medium'
-              ? `${mediumCount}`
-              : hoveredTier === 'High'
-              ? `${highCount}`
-              : `${total}`}
+          <span className="text-xs text-[#767069] font-normal mt-1 whitespace-nowrap">
+            {activeFocus ? `${activeFocus} Risk` : 'Customers'}
           </span>
-          <span className="mono text-[10px] text-gray-500">
-            {hoveredTier === 'Low'
-              ? `${lowPct.toFixed(1)}%`
-              : hoveredTier === 'Medium'
-              ? `${medPct.toFixed(1)}%`
-              : hoveredTier === 'High'
-              ? `${highPct.toFixed(1)}%`
-              : 'Cards'}
-          </span>
+          {selectedTier && (
+            <span className="text-[9px] font-mono text-[#BA5641] underline mt-0.5">
+              Reset filter
+            </span>
+          )}
         </div>
       </div>
 
-      {/* Legend list */}
-      <div className="w-full space-y-2 text-xs">
-        <div 
-          onMouseEnter={() => setHoveredTier('Low')}
-          onMouseLeave={() => setHoveredTier(null)}
-          className={`p-2.5 border transition-all cursor-pointer ${
-            hoveredTier === 'Low' ? 'border-[#4338ca] bg-[#eff6ff]' : 'border-[#e5e7eb] bg-white'
-          }`}
+      {/* Legend List matching screenshot, fully clickable and robust on small widths */}
+      <div className="flex-1 space-y-2 w-full min-w-0">
+        {/* Low Risk */}
+        <div
+          onClick={() => handleTierClick('Low')}
+          onMouseEnter={() => setHovered('Low')}
+          onMouseLeave={() => setHovered(null)}
+          className={`flex items-center justify-between text-xs px-2.5 py-2 rounded-lg border transition-all cursor-pointer ${
+            selectedTier === 'Low'
+              ? 'border-[#6DA884] bg-[#EAF3ED] shadow-2xs font-semibold'
+              : hovered === 'Low'
+              ? 'border-[#EBE6DC] bg-[#FAF7F2]'
+              : 'border-transparent hover:bg-[#FAF7F2]'
+          } ${selectedTier && selectedTier !== 'Low' ? 'opacity-40' : 'opacity-100'}`}
         >
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-[#4338ca]" />
-              <span className="font-semibold text-[#1a1a1a]">Class A — Low Risk (&lt; 35)</span>
-            </div>
-            <div className="mono font-bold text-[#4338ca]">
-              {lowCount} ({lowPct.toFixed(1)}%)
-            </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <span className="w-2.5 h-2.5 rounded-full bg-[#6DA884] shrink-0" />
+            <span className="text-[#1A1816] whitespace-nowrap font-medium">Low Risk</span>
           </div>
-          <p className="text-[11px] text-gray-500 mt-0.5">Prime cardholders; negligible charge-off likelihood.</p>
+          <div className="tabular-nums font-mono text-[#1A1816] shrink-0 text-right ml-2">
+            <span className="font-semibold">{lowCount}</span>{' '}
+            <span className="text-[#767069] text-[11px]">({lowPct.toFixed(1)}%)</span>
+          </div>
         </div>
 
-        <div 
-          onMouseEnter={() => setHoveredTier('Medium')}
-          onMouseLeave={() => setHoveredTier(null)}
-          className={`p-2.5 border transition-all cursor-pointer ${
-            hoveredTier === 'Medium' ? 'border-[#b45309] bg-amber-50/70' : 'border-[#e5e7eb] bg-white'
-          }`}
+        {/* Medium Risk */}
+        <div
+          onClick={() => handleTierClick('Medium')}
+          onMouseEnter={() => setHovered('Medium')}
+          onMouseLeave={() => setHovered(null)}
+          className={`flex items-center justify-between text-xs px-2.5 py-2 rounded-lg border transition-all cursor-pointer ${
+            selectedTier === 'Medium'
+              ? 'border-[#DF9E47] bg-[#FCF4E6] shadow-2xs font-semibold'
+              : hovered === 'Medium'
+              ? 'border-[#EBE6DC] bg-[#FAF7F2]'
+              : 'border-transparent hover:bg-[#FAF7F2]'
+          } ${selectedTier && selectedTier !== 'Medium' ? 'opacity-40' : 'opacity-100'}`}
         >
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-[#b45309]" />
-              <span className="font-semibold text-[#1a1a1a]">Class B — Medium Risk (35–64)</span>
-            </div>
-            <div className="mono font-bold text-[#b45309]">
-              {mediumCount} ({medPct.toFixed(1)}%)
-            </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <span className="w-2.5 h-2.5 rounded-full bg-[#DF9E47] shrink-0" />
+            <span className="text-[#1A1816] whitespace-nowrap font-medium">Medium Risk</span>
           </div>
-          <p className="text-[11px] text-gray-500 mt-0.5">Revolving balance exposure; watchlist monitoring.</p>
+          <div className="tabular-nums font-mono text-[#1A1816] shrink-0 text-right ml-2">
+            <span className="font-semibold">{medCount}</span>{' '}
+            <span className="text-[#767069] text-[11px]">({medPct.toFixed(1)}%)</span>
+          </div>
         </div>
 
-        <div 
-          onMouseEnter={() => setHoveredTier('High')}
-          onMouseLeave={() => setHoveredTier(null)}
-          className={`p-2.5 border transition-all cursor-pointer ${
-            hoveredTier === 'High' ? 'border-[#be123c] bg-rose-50/70' : 'border-[#e5e7eb] bg-white'
-          }`}
+        {/* High Risk */}
+        <div
+          onClick={() => handleTierClick('High')}
+          onMouseEnter={() => setHovered('High')}
+          onMouseLeave={() => setHovered(null)}
+          className={`flex items-center justify-between text-xs px-2.5 py-2 rounded-lg border transition-all cursor-pointer ${
+            selectedTier === 'High'
+              ? 'border-[#BA5641] bg-[#FCECE7] shadow-2xs font-semibold'
+              : hovered === 'High'
+              ? 'border-[#EBE6DC] bg-[#FAF7F2]'
+              : 'border-transparent hover:bg-[#FAF7F2]'
+          } ${selectedTier && selectedTier !== 'High' ? 'opacity-40' : 'opacity-100'}`}
         >
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-[#be123c]" />
-              <span className="font-semibold text-[#1a1a1a]">Class C — High Risk (&ge; 65)</span>
-            </div>
-            <div className="mono font-bold text-[#be123c]">
-              {highCount} ({highPct.toFixed(1)}%)
-            </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <span className="w-2.5 h-2.5 rounded-full bg-[#BA5641] shrink-0" />
+            <span className="text-[#1A1816] whitespace-nowrap font-medium">High Risk</span>
           </div>
-          <p className="text-[11px] text-gray-500 mt-0.5">Severe utilization strain; mandatory workout required.</p>
+          <div className="tabular-nums font-mono text-[#1A1816] shrink-0 text-right ml-2">
+            <span className="font-semibold">{highCount}</span>{' '}
+            <span className="text-[#767069] text-[11px]">({highPct.toFixed(1)}%)</span>
+          </div>
         </div>
       </div>
     </div>
   );
 };
 
-interface PortfolioExposureChartProps {
-  lowExposure: number;
-  lowLimit: number;
-  medExposure: number;
-  medLimit: number;
-  highExposure: number;
-  highLimit: number;
+export interface AgeGroupBarChartProps {
+  data?: { group: string; rate: number }[];
+  selectedGroup?: string | null;
+  onSelectGroup?: (group: string | null) => void;
 }
 
-export const PortfolioExposureChart: React.FC<PortfolioExposureChartProps> = ({
-  lowExposure,
-  lowLimit,
-  medExposure,
-  medLimit,
-  highExposure,
-  highLimit,
+// Progressive terracotta tones across the 5 age cohorts from the UI screenshot
+const AGE_BAR_COLORS = ['#DEB2A8', '#D49A8D', '#CB8374', '#BF6B59', '#B3533E'];
+
+export const AgeGroupBarChart: React.FC<AgeGroupBarChartProps> = ({
+  data = [
+    { group: '< 25', rate: 12 },
+    { group: '25 – 35', rate: 16 },
+    { group: '35 – 45', rate: 21 },
+    { group: '45 – 55', rate: 26 },
+    { group: '> 55', rate: 36 },
+  ],
+  selectedGroup = null,
+  onSelectGroup,
 }) => {
-  const tiers = [
-    {
-      tier: 'Class A (Low Risk)',
-      color: 'bg-[#4338ca]',
-      barColor: '#4338ca',
-      exposure: lowExposure,
-      limit: lowLimit,
-      utilization: lowLimit > 0 ? (lowExposure / lowLimit) * 100 : 0,
-    },
-    {
-      tier: 'Class B (Medium Risk)',
-      color: 'bg-[#b45309]',
-      barColor: '#b45309',
-      exposure: medExposure,
-      limit: medLimit,
-      utilization: medLimit > 0 ? (medExposure / medLimit) * 100 : 0,
-    },
-    {
-      tier: 'Class C (High Risk)',
-      color: 'bg-[#be123c]',
-      barColor: '#be123c',
-      exposure: highExposure,
-      limit: highLimit,
-      utilization: highLimit > 0 ? (highExposure / highLimit) * 100 : 0,
-    },
-  ];
+  const [hoveredIdx, setHoveredIdx] = useState<number | null>(null);
 
-  const maxLimit = Math.max(...tiers.map((t) => t.limit), 100000);
+  const yTicks = [40, 30, 20, 10, 0];
+  const chartHeight = 125;
+  const maxVal = 40;
+
+  const handleBarClick = (group: string) => {
+    if (!onSelectGroup) return;
+    if (selectedGroup === group) {
+      onSelectGroup(null);
+    } else {
+      onSelectGroup(group);
+    }
+  };
 
   return (
-    <div className="space-y-4 text-xs">
-      {tiers.map((item) => {
-        const exposureWidth = (item.exposure / maxLimit) * 100;
-        const totalLimitWidth = (item.limit / maxLimit) * 100;
-
-        return (
-          <div key={item.tier} className="space-y-1.5">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2 font-medium text-[#1a1a1a]">
-                <span className={`w-2 h-2 rounded-full ${item.color}`} />
-                <span>{item.tier}</span>
-              </div>
-              <div className="mono text-gray-600">
-                <span className="font-bold text-[#1a1a1a]">${(item.exposure / 1000).toFixed(1)}k</span>
-                <span className="text-gray-400"> / ${(item.limit / 1000).toFixed(1)}k limit</span>
-                <span className="ml-2 font-medium text-[#4338ca]">({item.utilization.toFixed(1)}% util)</span>
-              </div>
-            </div>
-
-            {/* Comparison bar */}
-            <div className="h-3.5 bg-gray-100 overflow-hidden relative border border-[#e5e7eb]">
-              <div
-                className="h-full bg-gray-200 absolute left-0 top-0"
-                style={{ width: `${totalLimitWidth}%` }}
-              />
-              <div
-                className="h-full absolute left-0 top-0 transition-all duration-300"
-                style={{
-                  width: `${exposureWidth}%`,
-                  backgroundColor: item.barColor,
-                }}
-              />
-            </div>
-          </div>
-        );
-      })}
-
-      <div className="flex items-center justify-between text-[11px] text-gray-500 pt-3 border-t border-[#e5e7eb]">
-        <div className="flex items-center gap-4 mono text-[10px]">
-          <div className="flex items-center gap-1.5">
-            <span className="w-2.5 h-2.5 bg-gray-300" />
-            <span>Credit Limit Capacity</span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <span className="w-2.5 h-2.5 bg-[#1a1a1a]" />
-            <span>Drawn Balance Exposure</span>
-          </div>
-        </div>
-        <span className="meta">Monitoring Cycle 2026.10</span>
-      </div>
-    </div>
-  );
-};
-
-interface RiskScoreGaugeProps {
-  score: number; // 0 to 100
-  tier: RiskTier;
-  size?: number;
-}
-
-export const RiskScoreGauge: React.FC<RiskScoreGaugeProps> = ({ score, tier, size = 190 }) => {
-  const strokeWidth = 12;
-  const radius = (size - strokeWidth * 2) / 2;
-  const center = size / 2;
-  const arcLength = Math.PI * radius;
-  const progress = Math.min(100, Math.max(0, score)) / 100;
-  const progressOffset = arcLength * (1 - progress);
-
-  let statusColor = '#4338ca';
-  if (tier === 'Medium') statusColor = '#b45309';
-  if (tier === 'High') statusColor = '#be123c';
-
-  return (
-    <div className="flex flex-col items-center justify-center relative">
-      <svg
-        width={size}
-        height={size * 0.62}
-        viewBox={`0 0 ${size} ${size * 0.65}`}
-        className="overflow-visible"
-      >
-        {/* Background track */}
-        <path
-          d={`M ${strokeWidth} ${center} A ${radius} ${radius} 0 0 1 ${size - strokeWidth} ${center}`}
-          fill="none"
-          stroke="#e5e7eb"
-          strokeWidth={strokeWidth}
-          strokeLinecap="round"
-        />
-
-        {/* Active progress */}
-        <path
-          d={`M ${strokeWidth} ${center} A ${radius} ${radius} 0 0 1 ${size - strokeWidth} ${center}`}
-          fill="none"
-          stroke={statusColor}
-          strokeWidth={strokeWidth + 2}
-          strokeDasharray={arcLength}
-          strokeDashoffset={progressOffset}
-          strokeLinecap="round"
-          className="transition-all duration-500 ease-out"
-        />
-      </svg>
-
-      {/* Center readout */}
-      <div className="flex flex-col items-center -mt-8 sm:-mt-10 text-center">
-        <span className="text-4xl sm:text-5xl font-serif font-bold tracking-tight text-[#1a1a1a]">
-          {score}
-        </span>
-        <span className="meta mt-1">Risk Score / 100</span>
-        <div className="mt-1 flex items-center gap-1.5">
-          <span 
-            className="w-2 h-2 rounded-full" 
-            style={{ backgroundColor: statusColor }}
-          />
-          <span className="mono text-xs font-bold text-[#1a1a1a]">
-            {tier} Risk
+    <div className="w-full flex items-end gap-3">
+      {/* Y-Axis Labels */}
+      <div className="flex flex-col justify-between h-[125px] mb-7 text-[10px] text-[#9C958D] font-mono tabular-nums pr-1 shrink-0 pb-0.5">
+        {yTicks.map((tick) => (
+          <span key={tick} className="leading-none">
+            {tick}%
           </span>
-        </div>
+        ))}
       </div>
 
-      <div className="w-full flex justify-between px-2 mono text-[10px] text-gray-400 mt-2">
-        <span>0 (Low)</span>
-        <span>35</span>
-        <span>65</span>
-        <span>100 (High)</span>
+      {/* Main Chart Area (Bars + X-Axis column-by-column aligned) */}
+      <div className="flex-1 flex flex-col">
+        {/* Grid Lines + Bars Container */}
+        <div className="relative h-[125px] border-b border-[#E5DFD4] flex items-end justify-between px-1 sm:px-2">
+          {/* Horizontal Grid lines */}
+          <div className="absolute inset-0 pointer-events-none flex flex-col justify-between pb-0.5">
+            {yTicks.map((tick) => (
+              <div key={tick} className="w-full border-b border-[#F0EBE1] h-0" />
+            ))}
+          </div>
+
+          {/* Vertical Bars */}
+          {data.map((item, idx) => {
+            const barHeightPx = (item.rate / maxVal) * chartHeight;
+            const isHovered = hoveredIdx === idx;
+            const isSelected = selectedGroup === item.group;
+            const barColor = AGE_BAR_COLORS[idx % AGE_BAR_COLORS.length];
+
+            return (
+              <div
+                key={item.group}
+                onClick={() => handleBarClick(item.group)}
+                className="flex-1 flex flex-col items-center justify-end h-full z-10 px-1 group cursor-pointer"
+                onMouseEnter={() => setHoveredIdx(idx)}
+                onMouseLeave={() => setHoveredIdx(null)}
+              >
+                {/* Tooltip on hover or selection */}
+                {(isHovered || isSelected) && (
+                  <div className="text-[10px] font-mono font-semibold bg-[#1A1816] text-white px-1.5 py-0.5 rounded shadow-sm mb-1 whitespace-nowrap animate-fade-in z-20">
+                    {item.rate}% default rate
+                  </div>
+                )}
+
+                {/* The Bar with exact progressive chromatic terracotta tones */}
+                <div
+                  className={`w-full max-w-[34px] rounded-t-sm transition-all duration-200 ${
+                    isSelected
+                      ? 'ring-2 ring-[#BA5641] ring-offset-1 shadow-md scale-y-[1.02]'
+                      : isHovered
+                      ? 'brightness-95 shadow-xs scale-y-[1.01]'
+                      : 'hover:brightness-95'
+                  }`}
+                  style={{
+                    height: `${barHeightPx}px`,
+                    backgroundColor: barColor,
+                  }}
+                />
+              </div>
+            );
+          })}
+        </div>
+
+        {/* X-Axis Labels: strictly aligned with the exact same px-1 sm:px-2 and flex-1 columns */}
+        <div className="flex items-center justify-between px-1 sm:px-2 mt-2">
+          {data.map((item) => {
+            const isSelected = selectedGroup === item.group;
+            return (
+              <button
+                key={item.group}
+                onClick={() => handleBarClick(item.group)}
+                className={`flex-1 text-center text-[11px] font-sans transition-colors cursor-pointer whitespace-nowrap ${
+                  isSelected
+                    ? 'font-bold text-[#BA5641]'
+                    : 'text-[#767069] hover:text-[#1A1816]'
+                }`}
+              >
+                {item.group}
+              </button>
+            );
+          })}
+        </div>
       </div>
     </div>
   );

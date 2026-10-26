@@ -4,17 +4,22 @@
  */
 
 export type NavPage =
+  | 'dashboard'
+  | 'customers'
+  | 'risk-analysis'
+  | 'segments'
+  | 'alerts'
+  | 'model-insights'
+  | 'reports'
+  | 'settings'
+  // Compatibility aliases
   | 'customer-dashboard'
   | 'segment-dashboard'
   | 'prediction'
   | 'explanation'
-  | 'alerts'
-  | 'reports'
   | 'search'
-  // Legacy aliases supported for routing
   | 'assessment'
   | 'upload-report'
-  | 'dashboard'
   | 'segmentation';
 
 export type RiskTier = 'Low' | 'Medium' | 'High';
@@ -24,13 +29,12 @@ export interface ModelBenchmark {
   model_type: string;
   roc_auc: number;
   roc_auc_std?: number;
-  gini_coefficient: number;
   ks_statistic_pct: number;
   brier_score: number;
   precision: number;
   recall: number;
-  f1_score: number;
   accuracy_pct: number;
+  combined_accuracy_pct: number;
   status: string;
   description: string;
 }
@@ -65,11 +69,28 @@ export interface RepaymentRecord {
   balance: number;
 }
 
+export interface CustomerNote {
+  id: string;
+  author: string;
+  date: string;
+  text: string;
+}
+
+export interface RiskIndicatorScores {
+  creditUtilization: number;
+  paymentHistoryRisk: number;
+  outstandingDebt: number;
+  creditHistoryLength: number;
+  recentInquiries: number;
+}
+
 export interface Customer {
   id: string;
   fullName: string;
   email: string;
   age: number;
+  gender?: string;
+  accountType?: string;
   employmentStatus: string;
   employerCategory: string;
   annualIncome: number;
@@ -91,6 +112,11 @@ export interface Customer {
   actualDefault?: number;
   utilization_rate?: number;
   debt_to_income_est?: number;
+  creditLines?: number;
+  notes?: CustomerNote[];
+  riskIndicators?: RiskIndicatorScores;
+  calibratedProbability?: number;
+  riskTier?: RiskTier;
 }
 
 export interface RiskConfig {

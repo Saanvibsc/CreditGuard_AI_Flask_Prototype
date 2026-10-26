@@ -684,49 +684,52 @@ export const CustomerWiseDashboard: React.FC<CustomerWiseDashboardProps> = ({
             </div>
           )}
 
-          {/* AI Customer Copilot Box (Powered by Gemini) */}
-          <div className="bg-gradient-to-br from-indigo-900 via-slate-900 to-slate-950 text-white rounded-2xl p-6 shadow-md border border-indigo-800/60 space-y-5">
-            <div className="flex items-center justify-between border-b border-indigo-700/50 pb-4">
+          {/* Cardholder Supervisory Advisory & Relief Memo */}
+          <div className="bg-[#14213d] text-white rounded-2xl p-6 shadow-sm border border-slate-700/60 space-y-5">
+            <div className="flex items-center justify-between border-b border-slate-700/60 pb-4">
               <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-xl bg-indigo-600/80 flex items-center justify-center text-white shadow-xs">
-                  <Sparkles className="w-4 h-4" />
+                <div className="w-8 h-8 rounded-xl bg-indigo-600/90 flex items-center justify-center text-white shadow-xs">
+                  <ShieldCheck className="w-4 h-4" />
                 </div>
                 <div>
-                  <h3 className="text-sm font-bold text-white tracking-wide">AI Cardholder Copilot</h3>
-                  <p className="text-[11px] text-indigo-300">Gemini Risk Assessment & Policy Advisor</p>
+                  <h3 className="text-sm font-bold text-white tracking-wide">Cardholder Supervisory Advisory</h3>
+                  <p className="text-[11px] text-slate-300">Underwriting intelligence & tailored cardholder relief memo</p>
                 </div>
               </div>
-              <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-400/30">
-                Online
+              <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 border border-slate-700">
+                ACTIVE COHORT
               </span>
             </div>
 
-            {/* Quick Prompt Buttons */}
+            {/* Structured Advisory Actions */}
             <div className="space-y-2">
-              <span className="text-[11px] font-semibold text-indigo-300 uppercase tracking-wider block">
-                Quick Copilot Actions:
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
+                Standard Supervisory Actions:
               </span>
-              <div className="flex flex-wrap gap-1.5">
+              <div className="flex flex-col sm:flex-row flex-wrap gap-2">
                 <button
                   onClick={() => handleAskCustomerAi(`Provide a comprehensive risk audit and credit limit recommendation for ${activeCustomer.fullName}.`)}
                   disabled={aiLoading}
-                  className="text-[11px] px-2.5 py-1.5 rounded-lg bg-indigo-800/50 hover:bg-indigo-700 text-indigo-200 border border-indigo-600/40 transition-colors cursor-pointer text-left"
+                  className="text-xs px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition-colors cursor-pointer flex items-center gap-1.5 font-medium"
                 >
-                  🔍 Cardholder Risk Dossier
+                  <FileText className="w-3.5 h-3.5 text-indigo-400 shrink-0" />
+                  <span>Cardholder Risk Dossier</span>
                 </button>
                 <button
                   onClick={() => handleAskCustomerAi(`Evaluate whether this cardholder should receive a credit line decrease or forbearance based on their ${(Number(activeCustomer.creditUtilization) || 0).toFixed(1)}% utilization and repayment history.`)}
                   disabled={aiLoading}
-                  className="text-[11px] px-2.5 py-1.5 rounded-lg bg-indigo-800/50 hover:bg-indigo-700 text-indigo-200 border border-indigo-600/40 transition-colors cursor-pointer text-left"
+                  className="text-xs px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition-colors cursor-pointer flex items-center gap-1.5 font-medium"
                 >
-                  📉 Line Decrease Analysis
+                  <Sliders className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                  <span>Line Curtailment Analysis</span>
                 </button>
                 <button
                   onClick={() => handleAskCustomerAi(`Draft a professional customer relief notice with tailored repayment options for ${activeCustomer.fullName}.`)}
                   disabled={aiLoading}
-                  className="text-[11px] px-2.5 py-1.5 rounded-lg bg-indigo-800/50 hover:bg-indigo-700 text-indigo-200 border border-indigo-600/40 transition-colors cursor-pointer text-left"
+                  className="text-xs px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition-colors cursor-pointer flex items-center gap-1.5 font-medium"
                 >
-                  📝 Draft Cardholder Relief Memo
+                  <Send className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                  <span>Draft Cardholder Relief Memo</span>
                 </button>
               </div>
             </div>
@@ -736,18 +739,18 @@ export const CustomerWiseDashboard: React.FC<CustomerWiseDashboardProps> = ({
               <div className="relative">
                 <input
                   type="text"
-                  placeholder={`Ask Gemini about ${activeCustomer.fullName}'s risk...`}
+                  placeholder={`Inquire about ${activeCustomer.fullName}'s risk posture or policy options...`}
                   value={aiQuery}
                   onChange={(e) => setAiQuery(e.target.value)}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter') handleAskCustomerAi();
                   }}
-                  className="w-full pl-3 pr-10 py-2.5 bg-slate-900/90 border border-indigo-500/50 rounded-xl text-xs text-white placeholder-indigo-300/60 focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                  className="w-full pl-3 pr-10 py-2.5 bg-slate-900/90 border border-slate-700 rounded-xl text-xs text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-400"
                 />
                 <button
                   onClick={() => handleAskCustomerAi()}
                   disabled={aiLoading || !aiQuery.trim()}
-                  className="absolute right-2 top-2 p-1 text-indigo-300 hover:text-white disabled:opacity-40 cursor-pointer"
+                  className="absolute right-2 top-2 p-1 text-slate-400 hover:text-white disabled:opacity-40 cursor-pointer"
                 >
                   {aiLoading ? <RefreshCw className="w-4 h-4 animate-spin text-indigo-400" /> : <Send className="w-4 h-4" />}
                 </button>
@@ -756,18 +759,18 @@ export const CustomerWiseDashboard: React.FC<CustomerWiseDashboardProps> = ({
 
             {/* AI Response Display */}
             {aiResponse && (
-              <div className="p-4 rounded-xl bg-slate-900/90 border border-indigo-500/40 space-y-3.5 text-xs">
+              <div className="p-4 rounded-xl bg-slate-900/95 border border-slate-700 space-y-3.5 text-xs">
                 <div>
                   <div className="flex items-center justify-between mb-1.5">
-                    <span className="font-bold text-indigo-300 uppercase tracking-wider text-[10px]">
+                    <span className="font-bold text-slate-300 uppercase tracking-wider text-[10px]">
                       Underwriting Intelligence Summary
                     </span>
                     <button
                       onClick={() => handleCopy(aiResponse.answer, 'summary')}
-                      className="text-[10px] text-indigo-400 hover:text-white flex items-center gap-1 cursor-pointer"
+                      className="text-[10px] text-slate-400 hover:text-white flex items-center gap-1 cursor-pointer"
                     >
                       <Copy className="w-3 h-3" />
-                      {copiedType === 'summary' ? 'Copied' : 'Copy'}
+                      {copiedType === 'summary' ? 'Copied' : 'Copy Summary'}
                     </button>
                   </div>
                   <p className="text-slate-200 leading-relaxed text-xs">
@@ -777,14 +780,14 @@ export const CustomerWiseDashboard: React.FC<CustomerWiseDashboardProps> = ({
 
                 {/* Key Factors */}
                 {aiResponse.keyFactors && aiResponse.keyFactors.length > 0 && (
-                  <div className="border-t border-indigo-800/60 pt-2.5">
-                    <span className="text-[10px] font-bold text-indigo-300 uppercase tracking-wider block mb-1">
-                      Key Risk Factors
+                  <div className="border-t border-slate-800 pt-2.5">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
+                      Key Risk Factors Identified
                     </span>
                     <ul className="space-y-1">
                       {aiResponse.keyFactors.map((factor: string, i: number) => (
                         <li key={i} className="text-slate-300 text-[11px] flex items-start gap-1.5">
-                          <span className="text-indigo-400">•</span>
+                          <span className="text-amber-400 font-bold">•</span>
                           <span>{factor}</span>
                         </li>
                       ))}
@@ -794,8 +797,8 @@ export const CustomerWiseDashboard: React.FC<CustomerWiseDashboardProps> = ({
 
                 {/* Recommended Actions */}
                 {aiResponse.recommendedActions && aiResponse.recommendedActions.length > 0 && (
-                  <div className="border-t border-indigo-800/60 pt-2.5">
-                    <span className="text-[10px] font-bold text-indigo-300 uppercase tracking-wider block mb-1">
+                  <div className="border-t border-slate-800 pt-2.5">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
                       Recommended Bank Interventions
                     </span>
                     <ul className="space-y-1">
@@ -811,20 +814,20 @@ export const CustomerWiseDashboard: React.FC<CustomerWiseDashboardProps> = ({
 
                 {/* Draft Customer Notice if available */}
                 {aiResponse.draftNotice && (
-                  <div className="border-t border-indigo-800/60 pt-2.5 bg-black/30 p-2.5 rounded-lg">
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="text-[10px] font-bold text-indigo-300 uppercase tracking-wider">
-                        Generated Cardholder Communication Draft
+                  <div className="border-t border-slate-800 pt-2.5 bg-black/40 p-3 rounded-lg border border-slate-800">
+                    <div className="flex items-center justify-between mb-1.5">
+                      <span className="text-[10px] font-bold text-slate-300 uppercase tracking-wider">
+                        Supervisory Cardholder Communication Memo
                       </span>
                       <button
                         onClick={() => handleCopy(aiResponse.draftNotice, 'notice')}
-                        className="text-[10px] text-indigo-400 hover:text-white flex items-center gap-1 cursor-pointer"
+                        className="text-[10px] text-slate-400 hover:text-white flex items-center gap-1 cursor-pointer"
                       >
                         <Copy className="w-3 h-3" />
-                        {copiedType === 'notice' ? 'Copied' : 'Copy Draft'}
+                        {copiedType === 'notice' ? 'Copied' : 'Copy Memo'}
                       </button>
                     </div>
-                    <pre className="text-[11px] font-mono text-slate-300 whitespace-pre-wrap leading-tight">
+                    <pre className="text-[11px] font-mono text-slate-300 whitespace-pre-wrap leading-relaxed">
                       {aiResponse.draftNotice}
                     </pre>
                   </div>

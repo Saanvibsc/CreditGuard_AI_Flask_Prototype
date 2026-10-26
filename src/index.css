@@ -2,32 +2,60 @@
 
 @layer base {
   :root {
-    --bg: #fdfcf9;
-    --ink: #1a1a1a;
-    --accent: #4338ca;
-    --line: #e5e7eb;
-    --ink-soft: #6b7280;
+    --bg-main: #fbf9f5;
+    --bg-card: #ffffff;
+    --sidebar-bg: #faf7f2;
+    --border-color: #ebe6dc;
+    --text-primary: #1a1816;
+    --text-secondary: #767069;
+    --text-muted: #9c958d;
+    --terracotta: #ba5641;
+    --terracotta-hover: #a54935;
+    --terracotta-soft: #f5ebe6;
+    --terracotta-badge-bg: #fcece7;
+    --terracotta-badge-text: #ba472a;
+    --sage-badge-bg: #eaf5ee;
+    --sage-badge-text: #2e7d4c;
+    --sage-chart: #6ba280;
+    --amber-badge-bg: #fef5e7;
+    --amber-badge-text: #b4690e;
+    --amber-chart: #e5a958;
   }
 
   body {
-    background-color: var(--bg);
-    color: var(--ink);
-    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    background-color: var(--bg-main);
+    color: var(--text-primary);
+    font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    -webkit-font-smoothing: antialiased;
   }
 
-  h1, h2, h3, .font-editorial {
+  h1, h2, h3, .font-serif-heading {
     font-family: 'Cormorant Garamond', Georgia, serif;
+    letter-spacing: -0.01em;
   }
 
-  .font-mono, code, pre, .mono {
+  .font-mono, code, pre, .mono, [data-mono] {
     font-family: 'Space Mono', Menlo, Monaco, monospace;
+    font-variant-numeric: tabular-nums;
   }
 
-  .meta {
-    font-family: 'Space Mono', monospace;
-    font-size: 0.65rem;
-    text-transform: uppercase;
-    letter-spacing: 0.12em;
-    color: var(--ink-soft);
+  .tabular-nums {
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Custom scrollbars */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #e2dbce;
+    border-radius: 9999px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: #c8c0b2;
   }
 }

@@ -1,199 +1,233 @@
-import React, { useState, useEffect } from 'react';
-import { Menu, X } from 'lucide-react';
-import { api } from '../services/api';
-import { NavPage, Customer } from '../types';
+/**
+ * @license
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
-interface TopNavProps {
-  currentPage: NavPage;
-  onNavigate: (page: NavPage) => void;
-  onSelectCustomer: (id: string) => void;
-  activeAlertCount: number;
+import React, { useState, useEffect, useRef } from 'react';
+import { Search, Download, Menu, Calendar, ChevronDown, Check } from 'lucide-react';
+import { Customer } from '../types';
+
+export interface TopNavProps {
+  onSearchSelect?: (customerId: string) => void;
+  onExportReport?: () => void;
   onToggleSidebar?: () => void;
+  customers?: Customer[];
+  selectedDate?: string;
+  onDateChange?: (date: string) => void;
 }
 
-const NAV_ITEMS: { id: NavPage; label: string }[] = [
-  { id: 'customer-dashboard', label: 'Customer Dashboard' },
-  { id: 'segment-dashboard', label: 'Segment & Matrix' },
-  { id: 'prediction', label: 'ML Prediction & Benchmarks' },
-  { id: 'alerts', label: 'Surveillance Alerts' },
-  { id: 'reports', label: 'Audit & Reports' },
-  { id: 'search', label: 'Customer Directory' },
-  { id: 'explanation', label: 'Explanation & Guide' },
-];
-
 export const TopNav: React.FC<TopNavProps> = ({
-  currentPage,
-  onNavigate,
-  onSelectCustomer,
-  activeAlertCount,
+  onSearchSelect,
+  onExportReport,
   onToggleSidebar,
+  customers = [],
+  selectedDate = 'Oct 26, 2026',
+  onDateChange,
 }) => {
-  const [searchQuery, setSearchQuery] = useState('');
-  const [showQuickResults, setShowQuickResults] = useState(false);
-  const [searchResults, setSearchResults] = useState<Customer[]>([]);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [query, setQuery] = useState('');
+  const [showResults, setShowResults] = useState(false);
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [activeDate, setActiveDate] = useState(selectedDate || 'Oct 26, 2026');
+  const searchContainerRef = useRef<HTMLDivElement>(null);
+  const dateContainerRef = useRef<HTMLDivElement>(null);
+
+  const availableDates = [
+    'Oct 26, 2026',
+    'Oct 25, 2026',
+    'Oct 20, 2026',
+    'Sep 30, 2026',
+    'Aug 31, 2026',
+  ];
 
   useEffect(() => {
-    if (!searchQuery.trim()) {
-      setSearchResults([]);
-      return;
-    }
+    if (selectedDate) setActiveDate(selectedDate);
+  }, [selectedDate]);
 
-    const timer = setTimeout(() => {
-      api.searchCustomers(searchQuery).then((results: Customer[]) => {
-        setSearchResults(results.slice(0, 5));
-      });
-    }, 120);
+  const handleSelectDate = (date: string) => {
+    setActiveDate(date);
+    if (onDateChange) onDateChange(date);
+    setShowDatePicker(false);
+  };
 
-    return () => clearTimeout(timer);
-  }, [searchQuery]);
+  // Close dropdowns on outside click
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (
+        searchContainerRef.current &&
+        !searchContainerRef.current.contains(e.target as Node)
+      ) {
+        setShowResults(false);
+      }
+      if (
+        dateContainerRef.current &&
+        !dateContainerRef.current.contains(e.target as Node)
+      ) {
+        setShowDatePicker(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
-  const handleSelect = (id: string) => {
-    onSelectCustomer(id);
-    onNavigate('customer-dashboard');
-    setSearchQuery('');
-    setShowQuickResults(false);
-    setMobileMenuOpen(false);
+  const filtered = query.trim()
+    ? customers
+        .filter(
+          (c) =>
+            c.fullName.toLowerCase().includes(query.toLowerCase()) ||
+            c.id.toLowerCase().includes(query.toLowerCase()) ||
+            c.email.toLowerCase().includes(query.toLowerCase())
+        )
+        .slice(0, 6)
+    : [];
+
+  const handleSelectCustomer = (id: string) => {
+    if (onSearchSelect) onSearchSelect(id);
+    setQuery('');
+    setShowResults(false);
   };
 
   return (
-    <nav className="border-b border-[#e5e7eb] bg-[#fdfcf9] sticky top-0 z-40 px-4 sm:px-8 lg:px-16 py-3.5 flex items-center justify-between">
-      {/* Brand: Rotated diamond + CG.AI */}
-      <div className="flex items-center gap-6">
-        <button 
-          onClick={() => onNavigate('customer-dashboard')}
-          className="flex items-center gap-2.5 text-left focus:outline-none group cursor-pointer"
-        >
-          <div className="w-4 h-4 border-2 border-[#1a1a1a] rotate-45 transition-transform group-hover:rotate-90 duration-300" />
-          <span className="mono font-bold text-sm tracking-tight text-[#1a1a1a]">
-            CreditGuard AI
-          </span>
-        </button>
+    <header className="sticky top-0 z-30 bg-[#FAF7F2]/90 backdrop-blur-md border-b border-[#EBE6DC] px-4 sm:px-8 py-3.5 flex items-center justify-between gap-4">
+      {/* Mobile Sidebar Hamburger Button */}
+      <button
+        onClick={onToggleSidebar}
+        className="lg:hidden p-2 text-[#78716C] hover:text-[#1A1816] rounded-lg hover:bg-[#F2ECE4] transition-colors cursor-pointer"
+        aria-label="Open sidebar"
+      >
+        <Menu className="w-5 h-5" />
+      </button>
 
-        {/* Desktop Nav Links */}
-        <div className="hidden md:flex items-center gap-5 lg:gap-7 ml-2">
-          {NAV_ITEMS.map((item) => {
-            const isActive = currentPage === item.id;
-            return (
-              <button
-                key={item.id}
-                onClick={() => onNavigate(item.id)}
-                className={`text-[12px] font-semibold tracking-wide transition-colors relative py-1 cursor-pointer ${
-                  isActive
-                    ? 'text-[#4338ca]'
-                    : 'text-[#6b7280] hover:text-[#1a1a1a]'
-                }`}
-              >
-                <span>{item.label}</span>
-                {item.id === 'alerts' && activeAlertCount > 0 && (
-                  <span className="ml-1.5 mono text-[9px] px-1.5 py-0.2 rounded-xs bg-red-100 text-red-800 border border-red-200">
-                    {activeAlertCount}
-                  </span>
-                )}
-                {isActive && (
-                  <span className="absolute bottom-0 left-0 right-0 h-[2px] bg-[#4338ca]" />
-                )}
-              </button>
-            );
-          })}
+      {/* Global Customer Search Bar */}
+      <div ref={searchContainerRef} className="relative flex-1 max-w-xl">
+        <div className="flex items-center w-full px-3.5 py-2 bg-[#FBF9F5] border border-[#E5DFD4] rounded-lg text-xs transition-all focus-within:bg-white focus-within:border-[#BA5641] focus-within:ring-1 focus-within:ring-[#BA5641]/20">
+          <Search className="w-4 h-4 text-[#9C958D] mr-2.5 shrink-0" />
+          <input
+            type="text"
+            value={query}
+            onChange={(e) => {
+              setQuery(e.target.value);
+              setShowResults(true);
+            }}
+            onFocus={() => setShowResults(true)}
+            placeholder="Search customers by ID, name or email..."
+            className="w-full bg-transparent text-[#1A1816] placeholder-[#9C958D] text-xs outline-none"
+          />
         </div>
+
+        {/* Search Results Dropdown */}
+        {showResults && query.trim().length > 0 && (
+          <div className="absolute top-full mt-1.5 left-0 right-0 bg-white border border-[#E5DFD4] rounded-xl shadow-lg overflow-hidden py-1.5 z-50">
+            <div className="px-3.5 py-1 text-[10px] uppercase font-mono tracking-wider text-[#9C958D] border-b border-[#F0EBE1]">
+              Search Matches ({filtered.length})
+            </div>
+            {filtered.length > 0 ? (
+              filtered.map((c) => (
+                <button
+                  key={c.id}
+                  onClick={() => handleSelectCustomer(c.id)}
+                  className="w-full text-left px-3.5 py-2.5 hover:bg-[#FBF9F5] flex items-center justify-between transition-colors border-b border-[#F5F2EA] last:border-none cursor-pointer"
+                >
+                  <div className="min-w-0 pr-3">
+                    <div className="flex items-center gap-2">
+                      <span className="font-mono text-xs font-semibold text-[#1A1816]">
+                        {c.id}
+                      </span>
+                      <span className="text-xs text-[#1A1816] font-medium truncate">
+                        {c.fullName}
+                      </span>
+                    </div>
+                    <div className="text-[11px] text-[#78716C] truncate mt-0.5">
+                      {c.email}
+                    </div>
+                  </div>
+                  <div className="text-right shrink-0">
+                    <span
+                      className={`px-2 py-0.5 rounded-full text-[10px] font-medium ${
+                        c.riskTier === 'High'
+                          ? 'bg-[#FCECE7] text-[#BA472A]'
+                          : c.riskTier === 'Medium'
+                          ? 'bg-[#FCF4E6] text-[#B4690E]'
+                          : 'bg-[#EAF3ED] text-[#2E7D4C]'
+                      }`}
+                    >
+                      {c.riskTier || 'Normal'}
+                    </span>
+                    <div className="font-mono text-[10px] text-[#78716C] mt-0.5">
+                      Prob: {(c.calibratedProbability ?? 0.14).toFixed(2)}
+                    </div>
+                  </div>
+                </button>
+              ))
+            ) : (
+              <div className="px-3.5 py-4 text-xs text-[#78716C] text-center">
+                No matching customer records found for "{query}"
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
-      {/* Right: Search + Mobile Toggle */}
-      <div className="flex items-center gap-3 sm:gap-4">
-        {/* Quick Search */}
-        <div className="relative w-36 sm:w-52 hidden sm:block">
-          <div className="border-b-2 border-[#1a1a1a] flex items-center justify-between pb-1">
-            <input
-              type="text"
-              placeholder="Search customer ID or name..."
-              value={searchQuery}
-              onChange={(e) => {
-                setSearchQuery(e.target.value);
-                setShowQuickResults(true);
-              }}
-              onFocus={() => setShowQuickResults(true)}
-              className="bg-transparent text-xs text-[#1a1a1a] placeholder-gray-400 outline-none w-full font-sans"
-            />
-            <span className="meta text-[9px] shrink-0 text-gray-400">FIND</span>
-          </div>
+      {/* Right Controls: Date Picker & Export Report CTA */}
+      <div className="flex items-center gap-3 shrink-0">
+        {/* Date Selector Dropdown */}
+        <div ref={dateContainerRef} className="relative">
+          <button
+            onClick={() => setShowDatePicker(!showDatePicker)}
+            className="flex items-center gap-2 px-3 py-2 bg-[#FBF9F5] hover:bg-white border border-[#E5DFD4] rounded-lg text-xs font-medium text-[#1A1816] transition-colors cursor-pointer"
+          >
+            <Calendar className="w-3.5 h-3.5 text-[#78716C]" />
+            <span className="whitespace-nowrap">{activeDate}</span>
+            <ChevronDown className="w-3 h-3 text-[#78716C]" />
+          </button>
 
-          {/* Quick results dropdown */}
-          {showQuickResults && searchQuery.trim().length > 0 && (
-            <div className="absolute top-full mt-2 left-0 right-0 bg-white border border-[#e5e7eb] shadow-md py-1 z-50">
-              <div className="px-3 py-1.5 meta text-[9px] border-b border-[#e5e7eb]">
-                Matching Cardholders ({searchResults.length})
+          {showDatePicker && (
+            <div className="absolute right-0 top-full mt-1.5 w-48 bg-white border border-[#E5DFD4] rounded-xl shadow-lg py-1.5 z-50">
+              <div className="px-3 py-1 text-[10px] uppercase font-mono tracking-wider text-[#9C958D]">
+                Select Snapshot Date
               </div>
-              {searchResults.length > 0 ? (
-                searchResults.map((c) => (
-                  <button
-                    key={c.id}
-                    onClick={() => handleSelect(c.id)}
-                    className="w-full text-left px-3 py-2 text-xs hover:bg-[#fdfcf9] flex items-center justify-between transition-colors border-b border-gray-100 last:border-none cursor-pointer"
-                  >
-                    <div>
-                      <span className="mono font-bold text-[#1a1a1a]">{c.id}</span>
-                      <span className="text-gray-500 ml-2">{c.fullName}</span>
-                    </div>
-                    <span className="meta text-[9px] text-[#4338ca]">{c.cardType}</span>
-                  </button>
-                ))
-              ) : (
-                <div className="px-3 py-2 text-xs text-gray-400 text-center">
-                  No matching customers found
-                </div>
-              )}
+              {availableDates.map((date) => (
+                <button
+                  key={date}
+                  onClick={() => handleSelectDate(date)}
+                  className={`w-full text-left px-3 py-2 text-xs flex items-center justify-between hover:bg-[#FAF7F2] transition-colors cursor-pointer ${
+                    activeDate === date ? 'font-semibold text-[#BA5641]' : 'text-[#1A1816]'
+                  }`}
+                >
+                  <span>{date}</span>
+                  {activeDate === date && <Check className="w-3.5 h-3.5 text-[#BA5641]" />}
+                </button>
+              ))}
             </div>
           )}
         </div>
 
-        {/* Mobile menu hamburger */}
+        {/* Primary CTA: Export Report */}
         <button
-          onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-          className="md:hidden p-1.5 text-[#1a1a1a] hover:text-[#4338ca] cursor-pointer"
-          aria-label="Toggle Navigation"
+          onClick={onExportReport}
+          className="flex items-center gap-2 px-4 py-2 bg-[#BA5641] hover:bg-[#A54935] text-white rounded-lg text-xs font-medium transition-colors cursor-pointer shadow-xs whitespace-nowrap"
         >
-          {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+          <Download className="w-3.5 h-3.5" />
+          <span>Export Report</span>
         </button>
-      </div>
 
-      {/* Mobile Drawer */}
-      {mobileMenuOpen && (
-        <div className="absolute top-full left-0 right-0 bg-[#fdfcf9] border-b border-[#e5e7eb] shadow-lg md:hidden p-4 space-y-3 z-50">
-          <div className="border-b-2 border-[#1a1a1a] pb-1 flex items-center">
-            <input
-              type="text"
-              placeholder="Search customer ID or name..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="bg-transparent text-xs text-[#1a1a1a] outline-none w-full font-sans"
-            />
-            <span className="meta">ENTER</span>
+        {/* User Profile in Top Nav: Saanvi Gothe */}
+        <div className="flex items-center gap-2.5 pl-2 border-l border-[#E5DFD4]">
+          <div
+            className="w-8 h-8 rounded-full bg-[#EED2C5] flex items-center justify-center text-[#943825] font-semibold text-xs shrink-0 select-none border border-[#E0BCAC]"
+            title="Saanvi Gothe (saanvigothe@gmail.com)"
+          >
+            SG
           </div>
-
-          <div className="flex flex-col space-y-2 pt-2">
-            {NAV_ITEMS.map((item) => (
-              <button
-                key={item.id}
-                onClick={() => {
-                  onNavigate(item.id);
-                  setMobileMenuOpen(false);
-                }}
-                className={`text-left text-xs uppercase tracking-wider py-2 px-1 font-semibold flex items-center justify-between ${
-                  currentPage === item.id ? 'text-[#4338ca] border-l-2 border-[#4338ca] pl-2' : 'text-gray-600'
-                }`}
-              >
-                <span>{item.label}</span>
-                {item.id === 'alerts' && activeAlertCount > 0 && (
-                  <span className="mono text-[9px] px-1.5 py-0.5 bg-red-100 text-red-800">
-                    {activeAlertCount}
-                  </span>
-                )}
-              </button>
-            ))}
+          <div className="hidden sm:flex flex-col">
+            <span className="text-xs font-semibold text-[#1A1816] leading-tight">
+              Saanvi Gothe
+            </span>
+            <span className="text-[10px] text-[#78716C] leading-none mt-0.5">
+              Data Science Intern
+            </span>
           </div>
         </div>
-      )}
-    </nav>
+      </div>
+    </header>
   );
 };

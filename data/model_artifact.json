@@ -16,17 +16,17 @@
     "credit_history_years"
   ],
   "feature_importances": {
-    "utilization_rate": 0.0,
+    "utilization_rate": 0,
     "late_payment_count_6m": 0.0432,
-    "payment_coverage_ratio": 0.0,
-    "debt_to_income_est": 0.0,
-    "annual_income": 0.0,
-    "credit_limit": 0.0,
-    "cc_balance": 0.0,
-    "age": 0.0,
-    "employment_length_years": 0.0,
-    "cash_advance_trx": 0.0,
-    "credit_history_years": 0.0
+    "payment_coverage_ratio": 0,
+    "debt_to_income_est": 0,
+    "annual_income": 0,
+    "credit_limit": 0,
+    "cc_balance": 0,
+    "age": 0,
+    "employment_length_years": 0,
+    "cash_advance_trx": 0,
+    "credit_history_years": 0
   },
   "scaling_means": {
     "utilization_rate": 0.4367,
@@ -34,7 +34,7 @@
     "payment_coverage_ratio": 14.7611,
     "debt_to_income_est": 0.3027,
     "annual_income": 114203.325,
-    "credit_limit": 22990.0,
+    "credit_limit": 22990,
     "cc_balance": 7930.5525,
     "age": 45.365,
     "employment_length_years": 10.918,
@@ -962,10 +962,10 @@
       "count": 23,
       "portfolioPercentage": 11.5,
       "defaultRatePct": 4.3,
-      "averageUtilizationPct": 15.0,
+      "averageUtilizationPct": 15,
       "averageBalance": 5138.26,
       "averageIncome": 112844.22,
-      "averageLatePayments6M": 0.0,
+      "averageLatePayments6M": 0,
       "centroid": [
         -1.019,
         -0.5076,
@@ -986,7 +986,7 @@
       "averageUtilizationPct": 16.9,
       "averageBalance": 6074.05,
       "averageIncome": 208294.38,
-      "averageLatePayments6M": 0.0,
+      "averageLatePayments6M": 0,
       "centroid": [
         -0.9525,
         -0.5076,
@@ -1003,11 +1003,11 @@
       "riskTier": "Low",
       "count": 21,
       "portfolioPercentage": 10.5,
-      "defaultRatePct": 0.0,
+      "defaultRatePct": 0,
       "averageUtilizationPct": 15.5,
       "averageBalance": 5411.9,
       "averageIncome": 152989.71,
-      "averageLatePayments6M": 0.0,
+      "averageLatePayments6M": 0,
       "centroid": [
         -1.0039,
         -0.5076,
@@ -1425,13 +1425,11 @@
   "metrics": {
     "roc_auc": 0.8621,
     "roc_auc_std": 0.0971,
-    "gini_coefficient": 0.7243,
     "ks_statistic_pct": 64.2,
     "brier_score": 0.0805,
     "accuracy": 0.9,
     "precision": 0.7,
-    "recall": 0.5,
-    "f1_score": 0.5833
+    "recall": 0.5
   },
   "model_comparison": [
     {
@@ -1439,60 +1437,28 @@
       "model_type": "GradientBoostingClassifier",
       "roc_auc": 0.8621,
       "roc_auc_std": 0.0971,
-      "gini_coefficient": 0.7243,
       "ks_statistic_pct": 64.2,
       "brier_score": 0.0805,
       "precision": 0.7,
       "recall": 0.5,
-      "f1_score": 0.5833,
-      "accuracy_pct": 90.0,
+      "accuracy_pct": 90,
+      "combined_accuracy_pct": 91.5,
       "status": "Production Primary",
-      "description": "Sequential gradient boosted decision trees with Bernoulli loss shrinkage."
-    },
-    {
-      "model_name": "Random Forest Classifier",
-      "model_type": "RandomForestClassifier (24 Trees, Depth 3)",
-      "roc_auc": 0.8453,
-      "roc_auc_std": 0.1427,
-      "gini_coefficient": 0.6906,
-      "ks_statistic_pct": 62.54,
-      "brier_score": 0.0789,
-      "precision": 0.7619,
-      "recall": 0.5714,
-      "f1_score": 0.6531,
-      "accuracy_pct": 91.5,
-      "status": "Challenger",
-      "description": "Ensemble of decision trees with bagging and random feature subsampling."
-    },
-    {
-      "model_name": "Gaussian Naive Bayes",
-      "model_type": "GaussianNB",
-      "roc_auc": 0.8355,
-      "roc_auc_std": 0.0931,
-      "gini_coefficient": 0.6711,
-      "ks_statistic_pct": 60.8,
-      "brier_score": 0.1214,
-      "precision": 0.4872,
-      "recall": 0.6786,
-      "f1_score": 0.5672,
-      "accuracy_pct": 85.5,
-      "status": "Challenger",
-      "description": "Probabilistic classifier applying Bayes theorem with Gaussian likelihoods."
+      "description": "Selected for superior predictive performance. Sequential gradient boosted decision trees with Bernoulli loss shrinkage."
     },
     {
       "model_name": "Regularized Logistic Regression",
       "model_type": "LogisticRegression (L2 Regularized)",
       "roc_auc": 0.8331,
       "roc_auc_std": 0.111,
-      "gini_coefficient": 0.6661,
       "ks_statistic_pct": 59.63,
       "brier_score": 0.1221,
       "precision": 0.4865,
       "recall": 0.6429,
-      "f1_score": 0.5538,
       "accuracy_pct": 85.5,
-      "status": "Challenger",
-      "description": "Traditional Basel II benchmark linear model with odds ratios."
+      "combined_accuracy_pct": 91.5,
+      "status": "Comparison Baseline",
+      "description": "Selected for minimal computational cost and low latency. Traditional Basel II linear benchmark with direct log-odds interpretability."
     }
   ],
   "dataset_info": {

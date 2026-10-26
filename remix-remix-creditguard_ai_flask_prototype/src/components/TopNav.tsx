@@ -4,7 +4,7 @@
  */
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Search, Download, Menu } from 'lucide-react';
+import { Search, Download, Menu, Calendar, ChevronDown, Check } from 'lucide-react';
 import { Customer } from '../types';
 
 export interface TopNavProps {
@@ -21,10 +21,33 @@ export const TopNav: React.FC<TopNavProps> = ({
   onExportReport,
   onToggleSidebar,
   customers = [],
+  selectedDate = 'Oct 26, 2026',
+  onDateChange,
 }) => {
   const [query, setQuery] = useState('');
   const [showResults, setShowResults] = useState(false);
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [activeDate, setActiveDate] = useState(selectedDate || 'Oct 26, 2026');
   const searchContainerRef = useRef<HTMLDivElement>(null);
+  const dateContainerRef = useRef<HTMLDivElement>(null);
+
+  const availableDates = [
+    'Oct 26, 2026',
+    'Oct 25, 2026',
+    'Oct 20, 2026',
+    'Sep 30, 2026',
+    'Aug 31, 2026',
+  ];
+
+  useEffect(() => {
+    if (selectedDate) setActiveDate(selectedDate);
+  }, [selectedDate]);
+
+  const handleSelectDate = (date: string) => {
+    setActiveDate(date);
+    if (onDateChange) onDateChange(date);
+    setShowDatePicker(false);
+  };
 
   // Close dropdowns on outside click
   useEffect(() => {
@@ -34,6 +57,12 @@ export const TopNav: React.FC<TopNavProps> = ({
         !searchContainerRef.current.contains(e.target as Node)
       ) {
         setShowResults(false);
+      }
+      if (
+        dateContainerRef.current &&
+        !dateContainerRef.current.contains(e.target as Node)
+      ) {
+        setShowDatePicker(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);

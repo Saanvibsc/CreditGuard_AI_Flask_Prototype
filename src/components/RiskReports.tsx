@@ -246,10 +246,10 @@ export const RiskReports: React.FC<RiskReportsProps> = ({
             onDragLeave={() => setIsDragging(false)}
             onDrop={handleDrop}
             className={`flex cursor-pointer flex-col items-center justify-center border-2 border-dashed px-6 py-12 text-center transition ${
-              isDragging ? 'border-[#4338ca] bg-indigo-50' : 'border-[#cbd5e1] bg-white hover:border-[#4338ca]'
+              isDragging ? 'border-[#BA5641] bg-[#FAF7F2]' : 'border-[#E5DFD4] bg-white hover:border-[#BA5641]'
             }`}
           >
-            <span className="mb-4 bg-indigo-50 p-3 text-[#4338ca]"><Upload className="h-6 w-6" /></span>
+            <span className="mb-4 bg-[#FAF7F2] p-3 text-[#BA5641] rounded-xl"><Upload className="h-6 w-6" /></span>
             <span className="text-lg font-serif font-semibold text-[#1a1a1a]">
               {uploadLoading ? 'Reading report and calculating scenarios…' : 'Drop a risk report PDF here'}
             </span>
@@ -284,7 +284,7 @@ export const RiskReports: React.FC<RiskReportsProps> = ({
                     onSelectCustomer(comparison.customer.id);
                     setActiveTab('generate');
                   }}
-                  className="px-3 py-1.5 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 rounded text-xs font-semibold cursor-pointer"
+                  className="px-3 py-1.5 bg-[#FAF7F2] text-[#8A3A28] hover:bg-[#F5EBE6] border border-[#EBE6DC] rounded text-xs font-semibold cursor-pointer"
                 >
                   View Full Dossier →
                 </button>

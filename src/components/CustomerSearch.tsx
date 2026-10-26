@@ -380,7 +380,7 @@ export const CustomerSearch: React.FC<CustomerSearchProps> = ({
                   onSelectCustomer(activeCustomer.id);
                   onNavigate('prediction');
                 }}
-                className="w-full sm:flex-1 py-2.5 px-3 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 mono text-xs uppercase tracking-wider transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
+                className="w-full sm:flex-1 py-2.5 px-3 bg-[#FAF7F2] hover:bg-[#F5EBE6] text-[#8A3A28] border border-[#EBE6DC] mono text-xs uppercase tracking-wider transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
               >
                 <span>ML Prediction</span>
               </button>
