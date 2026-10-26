@@ -319,7 +319,7 @@ export const PortfolioDashboard: React.FC<PortfolioDashboardProps> = ({
           <div>
             <div className="flex items-center gap-2">
               <h1 className="text-3xl sm:text-4xl font-semibold font-serif-heading text-[#1A1816] tracking-tight">
-                Good morning, Saanvi.
+                Credit Portfolio Overview
               </h1>
               {isTargetingHighRisk && (
                 <span className="px-2.5 py-0.5 rounded-full text-xs font-mono font-bold bg-[#BA5641] text-white flex items-center gap-1">

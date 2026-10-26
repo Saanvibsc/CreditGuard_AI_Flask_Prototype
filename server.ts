@@ -643,38 +643,24 @@ app.get('/api/v1/segmentation/clusters', async (req, res) => {
   const segmentDefinitions = [
     {
       name: 'Prime Transactors',
-      tagline: 'High liquidity, pristine payment history, low revolving utilization',
-      description: 'Cardholders who consistently pay off balances, maintain low credit utilization (<25%), and exhibit zero payment delays.',
-      recommendedStrategy: 'Proactively increase credit limits and offer premium rewards/cards.',
+      tagline: 'High income, clean payment history, low card usage',
+      description: 'Customers who pay on time and use very little of their credit line (< 25%). Lowest risk group.',
+      recommendedStrategy: 'Offer higher credit limits and premium cardholder perks.',
       riskTier: 'Low'
     },
     {
       name: 'Revolving Balances',
-      tagline: 'Moderate utilization, steady payment behaviour, key interest generator',
-      description: 'Core revolving customers who carry monthly balances but make regular on-time payments with healthy debt service.',
-      recommendedStrategy: 'Maintain regular quarterly line reviews; offer balance consolidation programs.',
+      tagline: 'Steady balances, regular on-time payments, main revenue generator',
+      description: 'Customers who carry a monthly balance and make regular payments. Generates steady interest with low default risk.',
+      recommendedStrategy: 'Maintain existing limits and send standard monthly statements.',
       riskTier: 'Low'
     },
     {
-      name: 'Elevated Leverage',
-      tagline: 'High credit line utilization, elevated debt-to-income sensitivity',
-      description: 'Cardholders with utilization above 60% and higher leverage, sensitive to interest rate hikes and cash flow shocks.',
-      recommendedStrategy: 'Cap ATM cash advance facilities and require 3.5% minimum monthly payment ratio.',
-      riskTier: 'Medium'
-    },
-    {
-      name: 'Delinquency Watchlist',
-      tagline: 'Chronic payment delays (6M), high utilization, acute default hazard',
-      description: 'Accounts with multiple missed billing cycles or severe line strain. Primary source of potential default losses.',
-      recommendedStrategy: 'Immediate credit line curtailment of 20% and proactive workout desk contact.',
+      name: 'High-Risk Revolvers',
+      tagline: 'High balances, heavy card usage (80%+), multiple missed payments',
+      description: 'Customers with high credit utilization and 2 or more late payments. Source of over 75% of default losses.',
+      recommendedStrategy: 'Freeze credit limit increases, cap cash advances, and offer repayment assistance.',
       riskTier: 'High'
-    },
-    {
-      name: 'Emerging Young Borrowers',
-      tagline: 'Shorter credit tenure, lower average limit, active credit building',
-      description: 'Younger applicants or accounts with under 3 years credit history building payment reputation.',
-      recommendedStrategy: 'Graduated credit line growth tied to consecutive on-time payment milestones.',
-      riskTier: 'Medium'
     }
   ];
 

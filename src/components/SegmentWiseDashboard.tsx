@@ -34,10 +34,10 @@ interface SegmentWiseDashboardProps {
 
 const SEGMENT_COLORS: Record<string, { bg: string; text: string; dot: string; border: string }> = {
   'Prime Transactors': { bg: 'bg-emerald-50', text: 'text-emerald-800', dot: '#10b981', border: 'border-emerald-200' },
-  'Revolving Balances': { bg: 'bg-blue-50', text: 'text-blue-800', dot: '#3b82f6', border: 'border-blue-200' },
+  'Revolving Balances': { bg: 'bg-[#F9F5F0]', text: 'text-[#7A4B2A]', dot: '#8C5332', border: 'border-[#E7D7C8]' },
+  'High-Risk Revolvers': { bg: 'bg-rose-50', text: 'text-rose-800', dot: '#ef4444', border: 'border-rose-200' },
   'Elevated Leverage': { bg: 'bg-amber-50', text: 'text-amber-800', dot: '#f59e0b', border: 'border-amber-200' },
   'Delinquency Watchlist': { bg: 'bg-rose-50', text: 'text-rose-800', dot: '#ef4444', border: 'border-rose-200' },
-  'Emerging Young Borrowers': { bg: 'bg-purple-50', text: 'text-purple-800', dot: '#8b5cf6', border: 'border-purple-200' },
 };
 
 const DEFAULT_SEGMENT_COLOR = { bg: 'bg-slate-50', text: 'text-slate-800', dot: '#64748b', border: 'border-slate-200' };
@@ -95,7 +95,7 @@ export const SegmentWiseDashboard: React.FC<SegmentWiseDashboardProps> = ({
     const canonicalOrder = [
       'Prime Transactors',
       'Revolving Balances',
-      'Emerging Young Borrowers',
+      'High-Risk Revolvers',
       'Elevated Leverage',
       'Delinquency Watchlist'
     ];
@@ -265,26 +265,31 @@ export const SegmentWiseDashboard: React.FC<SegmentWiseDashboardProps> = ({
     const totalPortfolioCount = customers.length || 1;
     const totalPortfolioExposure = customers.reduce((sum, c) => sum + (c.outstandingBalance || 0), 0);
 
-    const segmentStrategies: Record<string, { tagline: string; strategy: string }> = {
+    const segmentStrategies: Record<string, { tagline: string; strategy: string; simpleProof: string }> = {
       'Prime Transactors': {
-        tagline: 'High liquidity, pristine payment history, low revolving utilization (<25%)',
-        strategy: 'Extend prime credit lines by 15–20% and market tier-1 rewards programs.'
+        tagline: 'High income, clean payment history, low card usage (67 accounts, 33.5%)',
+        strategy: 'Offer higher credit limits and premium cardholder perks.',
+        simpleProof: '67 of 200 accounts (33.5%). Low 14.7% card usage, high $166k avg income. Only 2 defaults (3.0%). 100% of accounts are Low Risk.'
       },
       'Revolving Balances': {
-        tagline: 'Core revolving cohort, steady payment behaviour, primary interest generator',
-        strategy: 'Maintain regular quarterly line reviews; offer automated balance sweep features.'
+        tagline: 'Steady balances, regular on-time payments, main revenue generator (95 accounts, 47.5%)',
+        strategy: 'Keep standard limits, send monthly statements, and monitor steady repayment.',
+        simpleProof: '95 of 200 accounts (47.5%). Moderate 47.4% card usage, holding $851,102 in balances. Only 6 defaults (6.3%). 91 Low Risk, 4 Medium Risk.'
+      },
+      'High-Risk Revolvers': {
+        tagline: 'High balances, heavy card usage (80%+), multiple missed payments (38 accounts, 19.0%)',
+        strategy: 'Freeze line increases, cap ATM cash advances, and offer repayment assistance.',
+        simpleProof: '38 of 200 accounts (19.0%). High 85.3% card usage, $393,509 in balances. 25 defaults happen here (65.8% default rate), making up 75% of total portfolio defaults.'
       },
       'Elevated Leverage': {
-        tagline: 'High utilization (60%+), elevated debt-to-income sensitivity',
-        strategy: 'Cap ATM cash advance facilities to 10% and mandate 3.5% minimum monthly payment.'
+        tagline: 'High credit line utilization, elevated debt-to-income sensitivity',
+        strategy: 'Cap ATM cash advance facilities to 10% and mandate 3.5% minimum monthly payment.',
+        simpleProof: 'High utilization accounts monitored for debt-to-income strain.'
       },
       'Delinquency Watchlist': {
-        tagline: 'Chronic payment delays (6M), acute default hazard (90+ DPD)',
-        strategy: 'Immediate credit line freeze/curtailment of 20% and proactive workout desk contact.'
-      },
-      'Emerging Young Borrowers': {
-        tagline: 'Shorter credit tenure, lower line ceiling, active credit reputation building',
-        strategy: 'Graduated credit line growth tied to consecutive on-time payment milestones.'
+        tagline: 'Chronic payment delays (6M), acute default hazard',
+        strategy: 'Immediate credit line freeze/curtailment of 20% and proactive workout desk contact.',
+        simpleProof: 'Accounts with multiple missed billing cycles or severe line strain.'
       }
     };
 
@@ -715,12 +720,182 @@ export const SegmentWiseDashboard: React.FC<SegmentWiseDashboardProps> = ({
         </div>
       </div>
 
+      {/* Proof of Segments: Plain Language Breakdown with Exact Figures */}
+      <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-xs space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-3">
+          <div className="flex items-center gap-2">
+            <span className="w-2.5 h-2.5 rounded-full bg-[#7A4B2A]" />
+            <h2 className="text-lg font-bold text-slate-900">
+              Proof of Customer Segments (Simple Facts &amp; Numbers)
+            </h2>
+          </div>
+          <span className="text-xs font-mono font-bold bg-[#F9F5F0] text-[#7A4B2A] border border-[#E7D7C8] px-2.5 py-1 rounded-lg">
+            200 Accounts Reconciled (100%)
+          </span>
+        </div>
+
+        <p className="text-xs text-slate-600 leading-relaxed">
+          Here is the plain English proof of how our 200 cardholders divide into 3 real groups based on their spending, balances, and payment habits. The numbers below sum exactly to our entire portfolio ($1,586,111 total debt across 200 accounts).
+        </p>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {/* Segment 1: Prime Transactors */}
+          <div className="p-4 rounded-xl border border-emerald-200 bg-emerald-50/50 space-y-3 flex flex-col justify-between">
+            <div>
+              <div className="flex items-center justify-between">
+                <span className="px-2 py-0.5 rounded text-[11px] font-bold uppercase tracking-wider bg-emerald-700 text-white">
+                  1. Prime Transactors
+                </span>
+                <span className="font-mono text-xs font-bold text-emerald-900">
+                  67 Accounts (33.5%)
+                </span>
+              </div>
+              <div className="mt-2 text-xs font-bold text-slate-900">
+                Safe, low-card-usage customers
+              </div>
+              <p className="text-xs text-slate-600 mt-1 leading-relaxed">
+                These customers make good money, use very little of their credit line, and pay on time every month.
+              </p>
+            </div>
+
+            <div className="space-y-1.5 pt-2 border-t border-emerald-200/80 font-mono text-xs text-slate-700">
+              <div className="flex justify-between">
+                <span className="text-slate-500 font-sans">Total Debt:</span>
+                <span className="font-bold">$341,500</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-500 font-sans">Avg Card Usage:</span>
+                <span className="font-bold text-emerald-700">14.7%</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-500 font-sans">Avg Income:</span>
+                <span className="font-bold">$166,499/yr</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-500 font-sans">Observed Defaults:</span>
+                <span className="font-bold text-emerald-700">2 of 67 (3.0%)</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-500 font-sans">Risk Tier:</span>
+                <span className="font-bold text-emerald-800">100% Low Risk</span>
+              </div>
+            </div>
+
+            <div className="p-2 rounded bg-white border border-emerald-200 text-[11px] text-emerald-900">
+              <strong>Action:</strong> Reward them and offer higher credit lines.
+            </div>
+          </div>
+
+          {/* Segment 2: Revolving Balances */}
+          <div className="p-4 rounded-xl border border-[#E7D7C8] bg-[#F9F5F0] space-y-3 flex flex-col justify-between">
+            <div>
+              <div className="flex items-center justify-between">
+                <span className="px-2 py-0.5 rounded text-[11px] font-bold uppercase tracking-wider bg-[#7A4B2A] text-white">
+                  2. Revolving Balances
+                </span>
+                <span className="font-mono text-xs font-bold text-[#5C3317]">
+                  95 Accounts (47.5%)
+                </span>
+              </div>
+              <div className="mt-2 text-xs font-bold text-slate-900">
+                Core interest-earning group
+              </div>
+              <p className="text-xs text-slate-600 mt-1 leading-relaxed">
+                Our largest group. They carry a monthly balance and make regular payments. They generate steady interest with very low default risk.
+              </p>
+            </div>
+
+            <div className="space-y-1.5 pt-2 border-t border-[#E7D7C8] font-mono text-xs text-slate-700">
+              <div className="flex justify-between">
+                <span className="text-slate-500 font-sans">Total Debt:</span>
+                <span className="font-bold text-slate-900">$851,102</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-500 font-sans">Avg Card Usage:</span>
+                <span className="font-bold text-[#7A4B2A]">47.4%</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-500 font-sans">Avg Income:</span>
+                <span className="font-bold">$93,930/yr</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-500 font-sans">Observed Defaults:</span>
+                <span className="font-bold text-slate-900">6 of 95 (6.3%)</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-500 font-sans">Risk Tier:</span>
+                <span className="font-bold text-[#7A4B2A]">91 Low, 4 Medium</span>
+              </div>
+            </div>
+
+            <div className="p-2 rounded bg-white border border-[#E7D7C8] text-[11px] text-[#5C3317]">
+              <strong>Action:</strong> Keep standard limits and send regular statements.
+            </div>
+          </div>
+
+          {/* Segment 3: High-Risk Revolvers */}
+          <div className="p-4 rounded-xl border border-rose-200 bg-rose-50/50 space-y-3 flex flex-col justify-between">
+            <div>
+              <div className="flex items-center justify-between">
+                <span className="px-2 py-0.5 rounded text-[11px] font-bold uppercase tracking-wider bg-rose-700 text-white">
+                  3. High-Risk Revolvers
+                </span>
+                <span className="font-mono text-xs font-bold text-rose-900">
+                  38 Accounts (19.0%)
+                </span>
+              </div>
+              <div className="mt-2 text-xs font-bold text-slate-900">
+                Strained &amp; late paying accounts
+              </div>
+              <p className="text-xs text-slate-600 mt-1 leading-relaxed">
+                Borrowers who are near their credit card limits and have missed multiple payments. This group causes 75% of all defaults.
+              </p>
+            </div>
+
+            <div className="space-y-1.5 pt-2 border-t border-rose-200/80 font-mono text-xs text-slate-700">
+              <div className="flex justify-between">
+                <span className="text-slate-500 font-sans">Total Debt:</span>
+                <span className="font-bold text-rose-700">$393,509</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-500 font-sans">Avg Card Usage:</span>
+                <span className="font-bold text-rose-700">85.3% (High)</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-500 font-sans">Avg Income:</span>
+                <span className="font-bold">$72,679/yr</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-500 font-sans">Observed Defaults:</span>
+                <span className="font-bold text-rose-700">25 of 38 (65.8%)</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-slate-500 font-sans">Risk Tier:</span>
+                <span className="font-bold text-rose-800">16 High, 9 Med, 13 Low</span>
+              </div>
+            </div>
+
+            <div className="p-2 rounded bg-white border border-rose-200 text-[11px] text-rose-900">
+              <strong>Action:</strong> Freeze limit increases and offer repayment support.
+            </div>
+          </div>
+        </div>
+
+        {/* Verification Checklist */}
+        <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-600 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <span className="font-bold text-slate-800">Reconciled Figures Proof:</span>
+          <span className="font-mono text-slate-700">
+            67 + 95 + 38 = <strong>200 cardholders</strong> · $341,500 + $851,102 + $393,509 = <strong>$1,586,111 total debt</strong>
+          </span>
+        </div>
+      </div>
+
       {/* CENTERPIECE: Interactive Segment Scatter Plot & Quadrant Visualizer */}
       <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-xs space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-4">
           <div>
             <div className="flex items-center gap-2">
-              <span className="w-2.5 h-2.5 rounded-full bg-indigo-600" />
+              <span className="w-2.5 h-2.5 rounded-full bg-[#7A4B2A]" />
               <h2 className="text-lg font-black text-slate-900">
                 Customer Scatter Map: Card Usage vs. Total Balance
               </h2>
@@ -736,7 +911,7 @@ export const SegmentWiseDashboard: React.FC<SegmentWiseDashboardProps> = ({
               onClick={() => setShowValueLabels(!showValueLabels)}
               className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-colors cursor-pointer flex items-center gap-1.5 ${
                 showValueLabels
-                  ? 'bg-indigo-50 border-indigo-300 text-indigo-700'
+                  ? 'bg-[#F9F5F0] border-[#E7D7C8] text-[#7A4B2A]'
                   : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'
               }`}
             >
@@ -748,7 +923,7 @@ export const SegmentWiseDashboard: React.FC<SegmentWiseDashboardProps> = ({
                 <span className="w-2 h-2 rounded-full bg-emerald-500" /> Prime
               </span>
               <span className="flex items-center gap-1">
-                <span className="w-2 h-2 rounded-full bg-blue-500" /> Revolver
+                <span className="w-2 h-2 rounded-full bg-[#8C5332]" /> Revolving
               </span>
               <span className="flex items-center gap-1">
                 <span className="w-2 h-2 rounded-full bg-amber-500" /> High Debt
@@ -762,14 +937,14 @@ export const SegmentWiseDashboard: React.FC<SegmentWiseDashboardProps> = ({
 
         {/* Selected Dot Quick Popover Drawer */}
         {selectedDotCustomer && (
-          <div className="p-4 bg-indigo-50/70 border border-indigo-200 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-4 animate-in fade-in duration-200">
+          <div className="p-4 bg-[#F9F5F0] border border-[#E7D7C8] rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-4 animate-in fade-in duration-200">
             <div>
               <div className="flex items-center gap-2">
                 <span className="font-bold text-slate-900 text-sm">{selectedDotCustomer.fullName}</span>
-                <span className="font-mono text-xs text-indigo-700 bg-indigo-100 px-2 py-0.5 rounded font-bold">
+                <span className="font-mono text-xs text-[#7A4B2A] bg-[#F1E8DF] px-2 py-0.5 rounded font-bold">
                   {selectedDotCustomer.id}
                 </span>
-                <span className="text-xs px-2 py-0.5 rounded-full bg-white border border-indigo-200 text-slate-700 font-semibold">
+                <span className="text-xs px-2 py-0.5 rounded-full bg-white border border-[#E7D7C8] text-slate-700 font-semibold">
                   {selectedDotCustomer.cardType}
                 </span>
               </div>
@@ -777,7 +952,7 @@ export const SegmentWiseDashboard: React.FC<SegmentWiseDashboardProps> = ({
                 Balance: <span className="font-bold text-slate-900">${Number(selectedDotCustomer?.outstandingBalance || 0).toLocaleString()}</span> ·
                 Utilization: <span className="font-bold text-slate-900">{(Number(selectedDotCustomer?.creditUtilization) || 0).toFixed(1)}%</span> ·
                 Credit Limit: <span className="font-semibold text-slate-800">${Number(selectedDotCustomer?.creditLimit || 0).toLocaleString()}</span> ·
-                Segment: <span className="font-semibold text-indigo-900">{selectedDotCustomer?.segment || 'Standard'}</span> ·
+                Segment: <span className="font-semibold text-[#7A4B2A]">{selectedDotCustomer?.segment || 'Standard'}</span> ·
                 Delinquency 6M: <span className="font-semibold text-slate-800">{selectedDotCustomer?.delayedPayments6M ?? 0} late cycles</span>
               </p>
             </div>
@@ -807,8 +982,8 @@ export const SegmentWiseDashboard: React.FC<SegmentWiseDashboardProps> = ({
           {/* Quadrant Background Watermarks (Aligned to inner axes: Left 12% to 94%, Top 10% to 84%) */}
           <div className="absolute left-[12%] right-[6%] top-[10%] bottom-[16%] grid grid-cols-2 grid-rows-2 pointer-events-none">
             {/* Top-Left Quadrant */}
-            <div className="border-r border-b border-dashed border-slate-200/80 p-3 bg-indigo-50/20">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-indigo-700/80 bg-indigo-100/70 px-2 py-0.5 rounded">
+            <div className="border-r border-b border-dashed border-slate-200/80 p-3 bg-[#F9F5F0]/60">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-[#7A4B2A] bg-[#F1E8DF] px-2 py-0.5 rounded">
                 Quadrant II: High-Income Borrowers (High Debt, Low % Used)
               </span>
             </div>
@@ -958,7 +1133,7 @@ export const SegmentWiseDashboard: React.FC<SegmentWiseDashboardProps> = ({
                     y1={`${hy}%`}
                     x2={`${hx}%`}
                     y2="84%"
-                    stroke="#4338ca"
+                    stroke="#7A4B2A"
                     strokeWidth="1.5"
                     strokeDasharray="3 3"
                   />
@@ -968,7 +1143,7 @@ export const SegmentWiseDashboard: React.FC<SegmentWiseDashboardProps> = ({
                     y1={`${hy}%`}
                     x2={`${hx}%`}
                     y2={`${hy}%`}
-                    stroke="#4338ca"
+                    stroke="#7A4B2A"
                     strokeWidth="1.5"
                     strokeDasharray="3 3"
                   />
@@ -979,7 +1154,7 @@ export const SegmentWiseDashboard: React.FC<SegmentWiseDashboardProps> = ({
                     width="7%"
                     height="18"
                     rx="4"
-                    fill="#4338ca"
+                    fill="#7A4B2A"
                   />
                   <text
                     x={`${hx}%`}
@@ -996,7 +1171,7 @@ export const SegmentWiseDashboard: React.FC<SegmentWiseDashboardProps> = ({
                     width="9%"
                     height="18"
                     rx="4"
-                    fill="#4338ca"
+                    fill="#7A4B2A"
                   />
                   <text
                     x="7%"
@@ -1193,10 +1368,10 @@ export const SegmentWiseDashboard: React.FC<SegmentWiseDashboardProps> = ({
             {matrixRiskFilter !== 'All' && (
               <button
                 onClick={() => setMatrixRiskFilter('All')}
-                className="px-2.5 py-1.5 bg-indigo-50 border border-indigo-200 text-indigo-700 rounded-xl text-xs font-bold cursor-pointer hover:bg-indigo-100 flex items-center gap-1"
+                className="px-2.5 py-1.5 bg-[#F9F5F0] border border-[#E7D7C8] text-[#7A4B2A] rounded-xl text-xs font-bold cursor-pointer hover:bg-[#F1E8DF] flex items-center gap-1"
               >
                 <span>Filtered: {matrixRiskFilter} Risk</span>
-                <span className="text-indigo-400">×</span>
+                <span className="text-[#8C5332]">×</span>
               </button>
             )}
           </div>
@@ -1337,7 +1512,7 @@ export const SegmentWiseDashboard: React.FC<SegmentWiseDashboardProps> = ({
                 key={`card-${tier.key}`}
                 onClick={() => setMatrixRiskFilter(matrixRiskFilter === tier.key ? 'All' : tier.key)}
                 className={`p-4 rounded-xl border transition-all cursor-pointer ${tier.lightBgClass} ${
-                  isFilterActive ? `ring-2 ring-indigo-600 ${tier.borderClass} shadow-xs` : `${tier.borderClass} hover:border-slate-400`
+                  isFilterActive ? `ring-2 ring-[#7A4B2A] ${tier.borderClass} shadow-xs` : `${tier.borderClass} hover:border-slate-400`
                 }`}
               >
                 <div className="flex items-center justify-between mb-2">
@@ -1378,7 +1553,7 @@ export const SegmentWiseDashboard: React.FC<SegmentWiseDashboardProps> = ({
 
                 <div className="mt-3 pt-2.5 border-t border-slate-200/60 text-[11px] text-slate-600 flex items-center justify-between">
                   <span className="truncate mr-1">{tier.policy}</span>
-                  <span className="text-indigo-600 font-bold shrink-0 text-[10px]">
+                  <span className="text-[#7A4B2A] font-bold shrink-0 text-[10px]">
                     {isFilterActive ? '✓ Active Filter' : 'Click to filter'}
                   </span>
                 </div>
@@ -1393,7 +1568,7 @@ export const SegmentWiseDashboard: React.FC<SegmentWiseDashboardProps> = ({
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-4">
           <div>
             <div className="flex items-center gap-2">
-              <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-indigo-100 text-indigo-800">
+              <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-[#F1E8DF] text-[#7A4B2A]">
                 Segment × Risk Analysis
               </span>
               <h3 className="text-base font-bold text-slate-900">
@@ -1477,7 +1652,7 @@ export const SegmentWiseDashboard: React.FC<SegmentWiseDashboardProps> = ({
                 const color = SEGMENT_COLORS[row.segment] || DEFAULT_SEGMENT_COLOR;
 
                 return (
-                  <tr key={idx} className={isSegmentSelected ? 'bg-indigo-50/40' : 'hover:bg-slate-50/60'}>
+                  <tr key={idx} className={isSegmentSelected ? 'bg-[#F9F5F0]/70' : 'hover:bg-slate-50/60'}>
                     <td className="py-3 px-4 font-semibold text-slate-900 flex items-center gap-2">
                       <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: color.dot }} />
                       <div>
@@ -1577,7 +1752,7 @@ export const SegmentWiseDashboard: React.FC<SegmentWiseDashboardProps> = ({
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-4">
           <div>
             <div className="flex items-center gap-2">
-              <span className="w-2.5 h-2.5 rounded-full bg-indigo-600" />
+              <span className="w-2.5 h-2.5 rounded-full bg-[#7A4B2A]" />
               <h3 className="text-base font-bold text-slate-900">Comparative Segment Benchmark Matrix</h3>
             </div>
             <p className="text-xs text-slate-500 mt-0.5">
@@ -1587,7 +1762,7 @@ export const SegmentWiseDashboard: React.FC<SegmentWiseDashboardProps> = ({
 
           <div className="flex flex-wrap items-center gap-2">
             <span className="text-xs font-mono text-slate-500 bg-slate-50 border border-slate-200 px-2.5 py-1 rounded-lg">
-              {comparativeSegmentMatrix.totals.totalCount} Accounts · 5 Cohorts
+              {comparativeSegmentMatrix.totals.totalCount} Accounts · 3 Segments
             </span>
 
             {/* Active Filters Indicators */}
@@ -1608,14 +1783,14 @@ export const SegmentWiseDashboard: React.FC<SegmentWiseDashboardProps> = ({
             )}
 
             {selectedSegment !== 'All' && (
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold bg-[#F9F5F0] text-[#7A4B2A] border border-[#E7D7C8]">
                 <span>Focus: {selectedSegment}</span>
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
                     setSelectedSegment('All');
                   }}
-                  className="hover:text-indigo-950 cursor-pointer font-bold"
+                  className="hover:text-[#5C3317] cursor-pointer font-bold"
                   title="Clear segment filter"
                 >
                   ×

@@ -27,7 +27,6 @@ export default function App() {
   const [activeAlertCount, setActiveAlertCount] = useState<number>(12);
   const [sidebarMobileOpen, setSidebarMobileOpen] = useState<boolean>(false);
   const [currency, setCurrency] = useState<'INR' | 'USD'>('INR');
-  const [selectedDate, setSelectedDate] = useState<string>('Oct 26, 2026');
 
   // Load customer index for customer switcher and report menus
   useEffect(() => {
@@ -67,7 +66,7 @@ export default function App() {
             notes: [
               {
                 id: `note-${Date.now()}`,
-                author: 'Saanvi Gothe',
+                author: 'Risk Officer',
                 date: 'Just now',
                 text: noteText,
               },
@@ -97,7 +96,7 @@ export default function App() {
 
       {/* 2. Main Viewport Container (offset for fixed sidebar on lg screen) */}
       <div className="flex-1 flex flex-col min-w-0 lg:pl-60 min-h-screen">
-        {/* Top Header Bar matching screenshot */}
+        {/* Top Header Bar */}
         <TopNav
           customers={customers}
           onSearchSelect={(id: string) => {
@@ -106,8 +105,6 @@ export default function App() {
           }}
           onExportReport={handleExportReport}
           onToggleSidebar={() => setSidebarMobileOpen(true)}
-          selectedDate={selectedDate}
-          onDateChange={(d) => setSelectedDate(d)}
         />
 
         {/* Workspace Body */}
