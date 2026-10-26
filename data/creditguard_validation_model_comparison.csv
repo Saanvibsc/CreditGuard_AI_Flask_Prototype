@@ -1,3 +1,5 @@
-model_name,model_type,roc_auc,roc_auc_std,ks_statistic_pct,brier_score,precision,recall,accuracy_pct,combined_accuracy_pct,status,description
-Gradient Boosting Classifier,GradientBoostingClassifier,0.8621,0.0971,64.2,0.0805,0.7000,0.5000,90.0,91.5,Production Primary,Selected for highest predictive performance. Sequential gradient boosted decision trees capturing non-linear credit delinquency patterns.
-Regularized Logistic Regression,LogisticRegression (L2 Regularized),0.8331,0.1110,59.63,0.1221,0.4865,0.6429,85.5,91.5,Comparison Baseline,Selected for minimal computational cost and low latency. Traditional Basel II linear benchmark with direct log-odds interpretability.
+model_name,model_type,roc_auc,roc_auc_std,gini_coefficient,ks_statistic_pct,brier_score,precision,recall,f1_score,accuracy_pct,status,description
+Gradient Boosting Classifier,GradientBoostingClassifier,0.8621,0.0971,0.7243,64.2,0.0805,0.7,0.5,0.5833,90.0,Production Primary,Sequential gradient boosted decision trees with Bernoulli loss shrinkage.
+Random Forest Classifier,"RandomForestClassifier (24 Trees, Depth 3)",0.8453,0.1427,0.6906,62.54,0.0789,0.7619,0.5714,0.6531,91.5,Challenger,Ensemble of decision trees with bagging and random feature subsampling.
+Gaussian Naive Bayes,GaussianNB,0.8355,0.0931,0.6711,60.8,0.1214,0.4872,0.6786,0.5672,85.5,Challenger,Probabilistic classifier applying Bayes theorem with Gaussian likelihoods.
+Regularized Logistic Regression,LogisticRegression (L2 Regularized),0.8331,0.111,0.6661,59.63,0.1221,0.4865,0.6429,0.5538,85.5,Challenger,Traditional Basel II benchmark linear model with odds ratios.

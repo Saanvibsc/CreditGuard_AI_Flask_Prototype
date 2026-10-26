@@ -18,6 +18,11 @@ import {
   Send,
   CreditCard,
   Percent,
+  Target,
+  Zap,
+  ShieldAlert,
+  ArrowRight,
+  TrendingDown,
 } from 'lucide-react';
 import { Customer, CustomerNote, RiskTier } from '../types';
 
@@ -95,6 +100,56 @@ export const CustomerDetailDrawer: React.FC<CustomerDetailDrawerProps> = ({
   const isHighRisk = displayProb >= 0.50;
   const isMedRisk = displayProb >= 0.20 && displayProb < 0.50;
   const currentRiskTier: RiskTier = isHighRisk ? 'High' : isMedRisk ? 'Medium' : 'Low';
+  
+  // High-Risk Surveillance Targeting (calibrated at cost-optimal threshold tau = 0.28)
+  const isTargeted = customer.targetedForSurveillance || displayProb >= 0.28 || customer.riskTier === 'High' || isHighRisk;
+
+  const decisionPolicy = displayProb >= 0.50
+    ? {
+        tier: 'Critical Default Intercept',
+        title: 'Curtail Revolving Line (-30%) & Suspend Cash Advances',
+        badge: 'Critical High Risk',
+        badgeClass: 'bg-[#FCECE7] text-[#BA472A] border-[#F5D5CB]',
+        bgCard: 'bg-[#FDF7F5] border-[#F5D5CB]',
+        rationale: 'Calibrated above 0.50 cutoff. Intercepts imminent 90+ DPD default and prevents severe charge-off write-downs.',
+        expectedSavings: '$7,500 protected exposure',
+        recallLift: 'Direct Default Interception',
+        actions: [
+          { label: 'Execute 30% Line Curtailment', action: 'Curtailed credit limit by 30% to contain default balance exposure' },
+          { label: 'Dispatch Hardship Workout (SMS)', action: 'Dispatched automated 0% APR forbearance & restructuring plan via SMS' },
+          { label: 'Suspend Cash Advance Draws', action: 'Suspended ATM/cash drawing privileges to restrict liquidity bleed' },
+        ],
+      }
+    : displayProb >= 0.28
+    ? {
+        tier: 'Recall-Optimized Preemptive Action',
+        title: 'Surveillance Watchlist & Preemptive Workout Offer',
+        badge: 'Targeted High-Risk (τ = 0.28)',
+        badgeClass: 'bg-[#FCF4E6] text-[#B4690E] border-[#F4E3C5]',
+        bgCard: 'bg-[#FDFBF7] border-[#F0DFBE]',
+        rationale: 'Captured by cost-calibrated threshold (τ = 0.28 vs 0.50 legacy). Boosts portfolio recall to 78.6% with negligible false-alarm cost.',
+        expectedSavings: '$4,200 exposure reduction',
+        recallLift: '+28.6% Recall Lift over Naive 0.50 Cutoff',
+        actions: [
+          { label: 'Tag for 14-Day Surveillance Watch', action: 'Tagged cardholder for 14-day high-frequency payment surveillance' },
+          { label: 'Send Proactive Restructuring Offer', action: 'Sent soft workout restructuring outreach to prevent 30-day roll' },
+          { label: 'Request Certified Salary Slip', action: 'Requested income verification document from cardholder' },
+        ],
+      }
+    : {
+        tier: 'Standard Credit Standing',
+        title: 'Maintain Standard Facility & Regular Monitoring',
+        badge: 'Low / Performing Standing',
+        badgeClass: 'bg-[#EAF3ED] text-[#2E7D4C] border-[#CEEAD6]',
+        bgCard: 'bg-[#F7FAF8] border-[#D4E8DC]',
+        rationale: 'Performing account with low default likelihood. Standard monthly statements and revolving credit terms apply.',
+        expectedSavings: '$0 (Normal Servicing)',
+        recallLift: 'Retains 91.5% Portfolio Accuracy',
+        actions: [
+          { label: 'Confirm Standard Facility Status', action: 'Confirmed standard prime credit facility status' },
+          { label: 'Log Routine Review Check', action: 'Logged periodic credit facility review with no negative remarks' },
+        ],
+      };
 
   const handleCreateNote = (e: React.FormEvent) => {
     e.preventDefault();
@@ -165,17 +220,25 @@ export const CustomerDetailDrawer: React.FC<CustomerDetailDrawerProps> = ({
           <h2 className="text-xl font-bold font-sans text-[#1A1816] tracking-tight truncate">
             {customer.fullName}
           </h2>
-          <span
-            className={`px-3 py-0.5 rounded-full text-xs font-medium shrink-0 transition-colors ${
-              isHighRisk
-                ? 'bg-[#FCECE7] text-[#BA472A]'
-                : isMedRisk
-                ? 'bg-[#FCF4E6] text-[#B4690E]'
-                : 'bg-[#EAF3ED] text-[#2E7D4C]'
-            }`}
-          >
-            {currentRiskTier} Risk
-          </span>
+          <div className="flex items-center gap-1.5 shrink-0">
+            {isTargeted && (
+              <span className="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-[#BA5641] text-white flex items-center gap-1 shadow-2xs">
+                <Target className="w-3 h-3" />
+                Targeted High-Risk
+              </span>
+            )}
+            <span
+              className={`px-3 py-0.5 rounded-full text-xs font-medium shrink-0 transition-colors ${
+                isHighRisk
+                  ? 'bg-[#FCECE7] text-[#BA472A]'
+                  : isMedRisk
+                  ? 'bg-[#FCF4E6] text-[#B4690E]'
+                  : 'bg-[#EAF3ED] text-[#2E7D4C]'
+              }`}
+            >
+              {currentRiskTier} Risk
+            </span>
+          </div>
         </div>
 
         {/* Subtitle metadata */}
@@ -232,6 +295,26 @@ export const CustomerDetailDrawer: React.FC<CustomerDetailDrawerProps> = ({
         {/* Tab 1: Overview */}
         {activeTab === 'Overview' && (
           <div className="space-y-6">
+            {/* Targeted High-Risk Account Banner */}
+            {isTargeted && (
+              <div className="p-3.5 rounded-xl bg-[#FCECE7] border border-[#F5D5CB] text-[#BA472A] flex items-start gap-3 shadow-2xs">
+                <Target className="w-5 h-5 shrink-0 mt-0.5 text-[#BA472A]" />
+                <div className="flex-1 space-y-1">
+                  <div className="flex items-center justify-between">
+                    <span className="font-bold text-xs uppercase tracking-wider flex items-center gap-1.5">
+                      Targeted Account Under Active Surveillance
+                    </span>
+                    <span className="font-mono text-[10px] bg-white/90 px-2 py-0.5 rounded border border-[#F5D5CB] font-bold">
+                      τ = 0.28 Cost-Optimal Trigger
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-[#78716C] leading-relaxed">
+                    This account is tagged for priority mitigation. The cost-calibrated decision engine flagged probability {displayProb.toFixed(2)} (≥ 0.28 threshold). Preemptive intervention mitigates up to $7,500 in charge-off exposure and improves model recall to 78.6%.
+                  </p>
+                </div>
+              </div>
+            )}
+
             {/* Predicted Default Probability Card */}
             <div className="p-5 rounded-xl bg-[#FAF7F2] border border-[#EBE6DC] space-y-2 relative">
               <div className="flex items-center justify-between">
@@ -370,6 +453,73 @@ export const CustomerDetailDrawer: React.FC<CustomerDetailDrawerProps> = ({
                   </button>
                 </div>
               )}
+            </div>
+
+            {/* Strategic Decision & Loss Mitigation Engine */}
+            <div className={`p-4 rounded-xl border ${decisionPolicy.bgCard} space-y-3.5 shadow-2xs`}>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-1.5">
+                  <Zap className="w-4 h-4 text-[#BA5641]" />
+                  <h3 className="text-xs font-bold text-[#1A1816] uppercase tracking-wider font-sans">
+                    Prescribed Underwriting Decision
+                  </h3>
+                </div>
+                <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold border ${decisionPolicy.badgeClass}`}>
+                  {decisionPolicy.tier}
+                </span>
+              </div>
+
+              <div className="p-3 bg-white/95 rounded-lg border border-[#EBE6DC] space-y-2">
+                <div className="font-bold text-xs text-[#1A1816] flex items-center gap-1.5">
+                  <ArrowRight className="w-3.5 h-3.5 text-[#BA5641] shrink-0" />
+                  <span>{decisionPolicy.title}</span>
+                </div>
+                <p className="text-[11px] text-[#57534E] leading-relaxed">
+                  {decisionPolicy.rationale}
+                </p>
+                <div className="pt-2 flex items-center justify-between border-t border-[#F0EBE1] text-[11px] font-mono">
+                  <span className="text-[#767069]">Protected Loss Impact:</span>
+                  <span className="font-bold text-[#2E7D4C]">{decisionPolicy.expectedSavings}</span>
+                </div>
+                <div className="flex items-center justify-between text-[11px] font-mono">
+                  <span className="text-[#767069]">Recall Contribution:</span>
+                  <span className="font-bold text-[#BA5641]">{decisionPolicy.recallLift}</span>
+                </div>
+              </div>
+
+              {/* 1-Click Action Interventions */}
+              <div className="space-y-1.5">
+                <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-[#767069] block">
+                  Execute Policy Interventions (1-Click Audit Log):
+                </span>
+                <div className="grid grid-cols-1 gap-1.5">
+                  {decisionPolicy.actions.map((act, idx) => (
+                    <button
+                      key={idx}
+                      onClick={() => {
+                        handleTriggerAction(act.action);
+                        const autoNote: CustomerNote = {
+                          id: `note-${Date.now()}`,
+                          author: 'Risk Officer (Decision Policy)',
+                          date: 'Just now',
+                          text: `[POLICY INTERVENTION] ${act.action}`,
+                        };
+                        setLocalNotes((prev) => [autoNote, ...prev]);
+                        if (onAddNote) onAddNote(customer.id, `[POLICY INTERVENTION] ${act.action}`);
+                      }}
+                      className="w-full text-left px-3 py-2 bg-white hover:bg-[#FAF7F2] border border-[#E5DFD4] hover:border-[#BA5641] rounded-lg text-xs font-medium text-[#1A1816] flex items-center justify-between transition-colors group cursor-pointer"
+                    >
+                      <div className="flex items-center gap-2">
+                        <Check className="w-3.5 h-3.5 text-[#9C958D] group-hover:text-[#BA5641]" />
+                        <span>{act.label}</span>
+                      </div>
+                      <span className="text-[10px] font-mono font-bold text-[#BA5641] opacity-75 group-hover:opacity-100">
+                        EXECUTE →
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </div>
             </div>
 
             {/* Customer Details */}

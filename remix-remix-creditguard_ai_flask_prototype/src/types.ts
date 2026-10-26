@@ -86,6 +86,8 @@ export interface RiskIndicatorScores {
 
 export interface Customer {
   id: string;
+  shortId?: string;
+  legacyId?: string;
   fullName: string;
   email: string;
   age: number;
@@ -104,7 +106,7 @@ export interface Customer {
   cashAdvanceCount6M: number;
   monthlyAverageSpend: number;
   creditHistoryYears: number;
-  inquiriesLast6M: number | null;
+  inquiriesLast6M?: number | null;
   segment: CustomerSegment;
   joinedDate: string;
   lastAssessmentDate: string;
@@ -117,6 +119,8 @@ export interface Customer {
   riskIndicators?: RiskIndicatorScores;
   calibratedProbability?: number;
   riskTier?: RiskTier;
+  decisionPolicy?: string;
+  targetedForSurveillance?: boolean;
 }
 
 export interface RiskConfig {

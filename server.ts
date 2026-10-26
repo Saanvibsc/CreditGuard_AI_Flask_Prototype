@@ -226,7 +226,10 @@ function loadCustomersFromCsv(): any[] {
       segment,
       clusterId: 0,
       actualDefault: feat ? (feat.pd > 0.5 ? 1 : 0) : parseInt(row.default || '0', 10),
-      calibratedProbability: feat?.pd || (late6m >= 2 ? 0.65 : utilPct > 50 ? 0.35 : 0.08),
+      calibratedProbability: feat?.pd ?? (typeof modelArtifact?.customer_oof_probabilities?.[legacyId] === 'number' ? modelArtifact.customer_oof_probabilities[legacyId] : (late6m >= 2 ? 0.65 : utilPct > 50 ? 0.35 : 0.08)),
+      riskTier: (feat?.pd ?? (typeof modelArtifact?.customer_oof_probabilities?.[legacyId] === 'number' ? modelArtifact.customer_oof_probabilities[legacyId] : 0.08)) >= 0.50 ? 'High' : ((feat?.pd ?? (typeof modelArtifact?.customer_oof_probabilities?.[legacyId] === 'number' ? modelArtifact.customer_oof_probabilities[legacyId] : 0.08)) >= 0.20 ? 'Medium' : 'Low'),
+      decisionPolicy: (feat?.pd ?? (typeof modelArtifact?.customer_oof_probabilities?.[legacyId] === 'number' ? modelArtifact.customer_oof_probabilities[legacyId] : 0.08)) >= 0.50 ? 'Curtail Line (-30%)' : ((feat?.pd ?? (typeof modelArtifact?.customer_oof_probabilities?.[legacyId] === 'number' ? modelArtifact.customer_oof_probabilities[legacyId] : 0.08)) >= 0.28 ? 'Surveillance Watch' : 'Standard Facility'),
+      targetedForSurveillance: (feat?.pd ?? (typeof modelArtifact?.customer_oof_probabilities?.[legacyId] === 'number' ? modelArtifact.customer_oof_probabilities[legacyId] : 0.08)) >= 0.28 || parseInt(row.default || '0', 10) === 1 || late6m >= 2,
       debt_to_income_est: parseFloat((balance / Math.max(income, 10000)).toFixed(2)),
       lastAssessmentDate: new Date().toISOString().split('T')[0]
     };

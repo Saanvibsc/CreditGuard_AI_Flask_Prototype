@@ -26,7 +26,9 @@ import {
   HelpCircle,
   Zap,
   RefreshCw,
-  ExternalLink
+  ExternalLink,
+  Target,
+  Crosshair,
 } from 'lucide-react';
 import { Customer, RiskConfig, EarlyWarningAlert, CustomerSegment } from '../types';
 import { api } from '../services/api';
@@ -49,7 +51,7 @@ export const CustomerWiseDashboard: React.FC<CustomerWiseDashboardProps> = ({
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [searchQuery, setSearchQuery] = useState<string>('');
-  const [tierFilter, setTierFilter] = useState<'All' | 'Low' | 'Medium' | 'High'>('All');
+  const [tierFilter, setTierFilter] = useState<'All' | 'Low' | 'Medium' | 'High' | 'Targeted'>('All');
   const [segmentFilter, setSegmentFilter] = useState<'All' | CustomerSegment>('All');
   const [alerts, setAlerts] = useState<EarlyWarningAlert[]>([]);
   const [copiedType, setCopiedType] = useState<string | null>(null);
@@ -108,7 +110,14 @@ export const CustomerWiseDashboard: React.FC<CustomerWiseDashboardProps> = ({
         c.email.toLowerCase().includes(searchQuery.toLowerCase());
 
       const computed = calculateRiskAssessment(c, config);
-      const matchesTier = tierFilter === 'All' || computed.riskTier === tierFilter;
+      const prob = c.calibratedProbability ?? computed.defaultProbability;
+      const isTargeted = c.targetedForSurveillance || prob >= 0.28 || computed.riskTier === 'High';
+      const matchesTier =
+        tierFilter === 'All'
+          ? true
+          : tierFilter === 'Targeted'
+          ? isTargeted
+          : computed.riskTier === tierFilter;
       const matchesSegment = segmentFilter === 'All' || c.segment === segmentFilter;
 
       return matchesSearch && matchesTier && matchesSegment;
@@ -240,6 +249,8 @@ export const CustomerWiseDashboard: React.FC<CustomerWiseDashboardProps> = ({
   const util = activeCustomer.creditUtilization ?? (((Number(activeCustomer.outstandingBalance) || 0) / Math.max(1, Number(activeCustomer.creditLimit) || 1)) * 100);
   const isHighUtil = util >= 80;
   const isMedUtil = util >= 50 && util < 80;
+  const activeProb = activeCustomer.calibratedProbability ?? assessment?.defaultProbability ?? 0.18;
+  const isActiveTargeted = activeCustomer.targetedForSurveillance || activeProb >= 0.28 || assessment?.riskTier === 'High';
 
   return (
     <div className="max-w-[1400px] mx-auto space-y-8 pb-20">
@@ -247,16 +258,27 @@ export const CustomerWiseDashboard: React.FC<CustomerWiseDashboardProps> = ({
       <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-xs space-y-6">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-slate-100 pb-5">
           <div>
-            <div className="flex items-center gap-2 mb-1">
+            <div className="flex items-center gap-2 mb-1 flex-wrap">
               <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold tracking-wide uppercase bg-indigo-50 text-indigo-700 border border-indigo-200">
                 Customer-Wise Underwriting Dashboard
               </span>
+              {isActiveTargeted && (
+                <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold tracking-wide uppercase bg-rose-50 text-rose-700 border border-rose-200 flex items-center gap-1 shadow-2xs">
+                  <Target className="w-3 h-3 text-rose-600" />
+                  Targeted High-Risk Surveillance
+                </span>
+              )}
               <span className="text-xs font-mono text-slate-400">
                 Record {currentIndex + 1} of {filteredCustomers.length}
               </span>
             </div>
-            <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
-              {activeCustomer.fullName}
+            <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight flex items-center gap-3">
+              <span>{activeCustomer.fullName}</span>
+              {isActiveTargeted && (
+                <span className="text-xs font-mono font-medium px-2 py-0.5 rounded bg-amber-50 text-amber-800 border border-amber-200">
+                  Decision: {activeProb >= 0.50 ? 'Curtail Limit (-30%)' : 'Watchlist Surveillance'}
+                </span>
+              )}
             </h1>
             <p className="text-xs sm:text-sm text-slate-500 mt-0.5">
               Account ID: <span className="font-mono font-semibold text-slate-800">{activeCustomer.id}</span> · {activeCustomer.email} · Cardholder since {activeCustomer.joinedDate}
@@ -326,10 +348,11 @@ export const CustomerWiseDashboard: React.FC<CustomerWiseDashboardProps> = ({
             <select
               value={tierFilter}
               onChange={(e) => setTierFilter(e.target.value as any)}
-              className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer"
+              className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 cursor-pointer font-medium"
             >
               <option value="All">All Risk Tiers</option>
-              <option value="High">High Risk Only</option>
+              <option value="Targeted">🎯 Targeted High-Risk (τ ≥ 0.28)</option>
+              <option value="High">High Risk Only (&gt; 0.50)</option>
               <option value="Medium">Medium Risk Only</option>
               <option value="Low">Low Risk Only</option>
             </select>

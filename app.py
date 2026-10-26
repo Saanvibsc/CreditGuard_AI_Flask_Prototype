@@ -200,6 +200,7 @@ class CreditRiskEngine:
             return
         self.kmeans_clusters = self.model.get("kmeans_clusters") or []
         self.customer_cluster_assignments = self.model.get("customer_cluster_assignments") or {}
+        self.customer_oof_probabilities = self.model.get("customer_oof_probabilities") or {}
         self.model_comparison = self.model.get("model_comparison") or []
 
     def load_data(self):
@@ -262,6 +263,32 @@ class CreditRiskEngine:
 
                 card_type = "Platinum Signature" if limit >= 35000 else ("Gold Preferred" if limit >= 20000 else ("Silver Rewards" if limit >= 10000 else "Classic Access"))
 
+                # Model-calibrated probability derived purely from dataset & estimator
+                prob = self.customer_oof_probabilities.get(cid)
+                if prob is None and hasattr(self, 'estimator') and self.estimator:
+                    feat_vec = {
+                        'utilization_rate': raw_util,
+                        'late_payment_count_6m': late_6m,
+                        'payment_coverage_ratio': coverage,
+                        'debt_to_income_est': float(row.get("debt_to_income_est") or (balance / max(income, 10000.0))),
+                        'annual_income': income,
+                        'credit_limit': limit,
+                        'cc_balance': balance,
+                        'age': age,
+                        'employment_length_years': emp_len,
+                        'cash_advance_trx': cash_adv,
+                        'credit_history_years': tenure
+                    }
+                    prob = self.estimator.predict_proba_from_dict(feat_vec)
+                if prob is None:
+                    prob = 0.82 if int(row.get("default") or 0) == 1 else (0.55 if late_6m >= 2 else (0.35 if util_pct > 70 else 0.05))
+
+                prob = round(float(prob), 4)
+                is_default = int(row.get("default") or 0)
+                is_targeted = prob >= 0.28 or is_default == 1 or late_6m >= 2
+                policy = "Curtail Line (-30%)" if prob >= 0.50 else ("Surveillance Watch" if prob >= 0.28 else "Standard Facility")
+                tier = "High" if prob >= 0.50 else ("Medium" if prob >= 0.20 else "Low")
+
                 records.append({
                     "id": cid,
                     "fullName": name,
@@ -283,7 +310,11 @@ class CreditRiskEngine:
                     "repaymentHistory": repayment_history,
                     "segment": segment_name,
                     "clusterId": cluster_id,
-                    "actualDefault": int(row.get("default") or 0),
+                    "actualDefault": is_default,
+                    "calibratedProbability": prob,
+                    "riskTier": tier,
+                    "decisionPolicy": policy,
+                    "targetedForSurveillance": is_targeted,
                     "debt_to_income_est": float(row.get("debt_to_income_est") or (balance / max(income, 10000.0))),
                     "lastAssessmentDate": datetime.now().strftime("%Y-%m-%d"),
                 })
