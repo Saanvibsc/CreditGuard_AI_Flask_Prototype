@@ -18,8 +18,9 @@ export const PORTFOLIO_STATS = {
   highRiskPercentText: '11.0% of total',
   avgDefaultProbability: 0.18,
   avgProbabilitySubtitle: 'Across all 200 customer accounts',
-  modelAccuracy: '91.5%',
-  modelClassifier: 'Gradient Boosting & Consensus Ensemble',
+  modelAccuracy: '90.0%',
+  modelPrecision: '70.0%',
+  modelClassifier: 'Gradient Boosting Classifier',
   distribution: {
     low: { count: 161, percent: 80.5, label: 'Low Risk', color: '#6ba280' },
     medium: { count: 17, percent: 8.5, label: 'Medium Risk', color: '#e5a958' },

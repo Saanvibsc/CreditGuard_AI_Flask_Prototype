@@ -97,57 +97,56 @@ export const CustomerDetailDrawer: React.FC<CustomerDetailDrawerProps> = ({
   };
 
   const displayProb = isSimulating ? calculateSimulatedProb() : baseProb;
-  const isHighRisk = displayProb >= 0.50;
-  const isMedRisk = displayProb >= 0.20 && displayProb < 0.50;
+  const isHighRisk = displayProb >= 0.65 || customer.riskTier === 'High';
+  const isMedRisk = !isHighRisk && (displayProb >= 0.35 || customer.riskTier === 'Medium');
   const currentRiskTier: RiskTier = isHighRisk ? 'High' : isMedRisk ? 'Medium' : 'Low';
   
-  // High-Risk Surveillance Targeting (calibrated at cost-optimal threshold tau = 0.28)
-  const isTargeted = customer.targetedForSurveillance || displayProb >= 0.28 || customer.riskTier === 'High' || isHighRisk;
+  const isTargeted = isHighRisk;
 
-  const decisionPolicy = displayProb >= 0.50
+  const decisionPolicy = isHighRisk
     ? {
-        tier: 'Critical Default Intercept',
-        title: 'Curtail Revolving Line (-30%) & Suspend Cash Advances',
-        badge: 'Critical High Risk',
+        tier: 'High Risk Intervention',
+        title: 'High Risk Review & Limit Protection',
+        badge: 'High Risk (PD ≥ 65%)',
         badgeClass: 'bg-[#FCECE7] text-[#BA472A] border-[#F5D5CB]',
         bgCard: 'bg-[#FDF7F5] border-[#F5D5CB]',
-        rationale: 'Calibrated above 0.50 cutoff. Intercepts imminent 90+ DPD default and prevents severe charge-off write-downs.',
-        expectedSavings: '$7,500 protected exposure',
-        recallLift: 'Direct Default Interception',
+        rationale: 'Default probability meets or exceeds high risk threshold (≥ 65%). Proactive credit review and balance containment recommended.',
+        expectedSavings: 'Risk Containment',
+        recallLift: 'High Risk Flagged',
         actions: [
-          { label: 'Execute 30% Line Curtailment', action: 'Curtailed credit limit by 30% to contain default balance exposure' },
-          { label: 'Dispatch Hardship Workout (SMS)', action: 'Dispatched automated 0% APR forbearance & restructuring plan via SMS' },
-          { label: 'Suspend Cash Advance Draws', action: 'Suspended ATM/cash drawing privileges to restrict liquidity bleed' },
+          { label: 'Execute Credit Line Review', action: 'Initiated credit line review to contain balance exposure' },
+          { label: 'Send Payment Reminder (SMS)', action: 'Dispatched automated payment reminder and payment options via SMS' },
+          { label: 'Suspend Cash Advance Draws', action: 'Restricted cash drawing privileges pending review' },
         ],
       }
-    : displayProb >= 0.28
+    : isMedRisk
     ? {
-        tier: 'Recall-Optimized Preemptive Action',
-        title: 'Surveillance Watchlist & Preemptive Workout Offer',
-        badge: 'Targeted High-Risk (τ = 0.28)',
+        tier: 'Medium Risk Watchlist',
+        title: 'Watchlist Monitoring & Repayment Tracking',
+        badge: 'Medium Risk (35%–64%)',
         badgeClass: 'bg-[#FCF4E6] text-[#B4690E] border-[#F4E3C5]',
         bgCard: 'bg-[#FDFBF7] border-[#F0DFBE]',
-        rationale: 'Captured by cost-calibrated threshold (τ = 0.28 vs 0.50 legacy). Boosts portfolio recall to 78.6% with negligible false-alarm cost.',
-        expectedSavings: '$4,200 exposure reduction',
-        recallLift: '+28.6% Recall Lift over Naive 0.50 Cutoff',
+        rationale: 'Account is in the moderate risk range (35% to 64%). Track monthly statement compliance and revolving balance trends.',
+        expectedSavings: 'Watchlist Monitoring',
+        recallLift: 'Watchlist Monitored',
         actions: [
-          { label: 'Tag for 14-Day Surveillance Watch', action: 'Tagged cardholder for 14-day high-frequency payment surveillance' },
-          { label: 'Send Proactive Restructuring Offer', action: 'Sent soft workout restructuring outreach to prevent 30-day roll' },
-          { label: 'Request Certified Salary Slip', action: 'Requested income verification document from cardholder' },
+          { label: 'Tag for Account Surveillance', action: 'Tagged cardholder for 30-day payment surveillance' },
+          { label: 'Send Statement Due Reminder', action: 'Sent statement due reminder to prevent delinquency' },
+          { label: 'Review Recent Utilization', action: 'Reviewed revolving credit utilization trend' },
         ],
       }
     : {
-        tier: 'Standard Credit Standing',
-        title: 'Maintain Standard Facility & Regular Monitoring',
-        badge: 'Low / Performing Standing',
+        tier: 'Low Risk Standard',
+        title: 'Standard Facility & Regular Monitoring',
+        badge: 'Low Risk (< 35%)',
         badgeClass: 'bg-[#EAF3ED] text-[#2E7D4C] border-[#CEEAD6]',
         bgCard: 'bg-[#F7FAF8] border-[#D4E8DC]',
-        rationale: 'Performing account with low default likelihood. Standard monthly statements and revolving credit terms apply.',
-        expectedSavings: '$0 (Normal Servicing)',
-        recallLift: 'Retains 91.5% Portfolio Accuracy',
+        rationale: 'Clean repayment profile and conservative utilization (< 35% probability). Standard terms apply.',
+        expectedSavings: 'Standard Terms',
+        recallLift: 'Low Risk Performing',
         actions: [
-          { label: 'Confirm Standard Facility Status', action: 'Confirmed standard prime credit facility status' },
-          { label: 'Log Routine Review Check', action: 'Logged periodic credit facility review with no negative remarks' },
+          { label: 'Confirm Standard Facility Status', action: 'Confirmed standard credit facility status' },
+          { label: 'Log Routine Review Check', action: 'Logged periodic review with no negative remarks' },
         ],
       };
 
